@@ -1,0 +1,92 @@
+{% extends 'app_base.html' %}
+{% block title %}{% if is_contributions %}My Contributions{% else %}Discover Projects{% endif %} | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  {% if is_contributions %}
+    <li class="breadcrumb-item active" aria-current="page">My Contributions</li>
+  {% else %}
+    <li class="breadcrumb-item active" aria-current="page">Discover Projects</li>
+  {% endif %}
+{% endblock %}
+
+{% block app_content %}
+{% if is_contributions %}
+  <h2>Projects I've Joined</h2>
+
+  <div class="row g-3 mt-2">
+    {% for project in projects %}
+      <div class="col-md-4">
+        {% include 'components/project_card.html' %}
+        <a class="small" href="{{ url_for('tasks.board', id=project.id) }}">Open Task Board</a>
+      </div>
+    {% else %}
+      <p class="text-muted">No active joined projects.</p>
+    {% endfor %}
+  </div>
+
+  {% if completed_projects %}
+    <h5 class="mt-4">Completed Projects</h5>
+    <div class="row g-3">
+      {% for project in completed_projects %}
+        <div class="col-md-4">
+          {% include 'components/project_card.html' %}
+          <a class="small" href="{{ url_for('projects_public.detail', id=project.id) }}">View Public Outcome</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="d-flex gap-3 mt-3">
+    <a href="{{ url_for('discover.index') }}">Browse more projects to join</a>
+    <a href="{{ url_for('dashboard.home') }}">Back to Dashboard</a>
+  </div>
+{% else %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Discover Projects</h2>
+    <a class="btn btn-outline-secondary" href="{{ url_for('discover.recommended') }}">Recommended for me</a>
+  </div>
+
+  <form class="card p-3 mb-4" method="get">
+    <div class="row g-2">
+      <div class="col-md-3"><input class="form-control" name="keyword" placeholder="Keyword" value="{{ filters.keyword if filters else '' }}"></div>
+      <div class="col-md-2"><input class="form-control" name="domain" placeholder="Domain" value="{{ filters.domain if filters else '' }}"></div>
+      <div class="col-md-2"><input class="form-control" name="status" placeholder="Status" value="{{ filters.status if filters else '' }}"></div>
+      <div class="col-md-2"><input class="form-control" name="geographic_scope" placeholder="Scope" value="{{ filters.geographic_scope if filters else '' }}"></div>
+      <div class="col-md-2">
+        <select class="form-select" name="sort">
+          <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="most_urgent" {% if filters.sort == 'most_urgent' %}selected{% endif %}>Most Urgent</option>
+          <option value="near_me" {% if filters.sort == 'near_me' %}selected{% endif %}>Near Me</option>
+          <option value="highest_match" {% if filters.sort == 'highest_match' %}selected{% endif %}>Highest Match</option>
+        </select>
+      </div>
+      <div class="col-md-1"><button class="btn btn-outline-secondary w-100">Go</button></div>
+    </div>
+  </form>
+
+  <div class="row g-3">
+    {% for project in projects %}
+      <div class="col-md-4">{% include 'components/project_card.html' %}</div>
+    {% else %}
+      <p class="text-muted">No projects found.</p>
+    {% endfor %}
+  </div>
+
+  {% set total_pages = ((total / per_page)|round(0, 'ceil'))|int if per_page else 1 %}
+  {% if total_pages > 1 %}
+    <nav aria-label="Discover pagination" class="mt-4">
+      <ul class="pagination">
+        {% if page > 1 %}
+          <li class="page-item"><a class="page-link" href="{{ url_for('discover.index', **request.args.to_dict(), page=page-1) }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page }} / {{ total_pages }}</span></li>
+        {% if page < total_pages %}
+          <li class="page-item"><a class="page-link" href="{{ url_for('discover.index', **request.args.to_dict(), page=page+1) }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+
+  <a class="small d-inline-block mt-2" href="{{ url_for('create.start') }}">Start a project instead</a>
+{% endif %}
+{% endblock %}

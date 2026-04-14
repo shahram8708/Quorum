@@ -1,0 +1,15 @@
+<div class="card role-card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <h6 class="mb-1">{{ role.title }}</h6>
+      <span class="badge {{ 'text-bg-success' if role.is_filled else 'text-bg-warning' }}">{{ 'Filled' if role.is_filled else 'Open' }}</span>
+    </div>
+    <p class="small text-muted mb-2">{{ role.description }}</p>
+    <p class="small mb-2">Hours/week: {{ role.hours_per_week }}</p>
+    <div class="d-flex flex-wrap gap-1">
+      {% for skill_id in role.skill_tags[:3] %}
+        <span class="badge text-bg-light">Skill #{{ skill_id }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>

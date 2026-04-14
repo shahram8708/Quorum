@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Onboarding | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5" style="max-width:860px;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="badge text-bg-secondary">Step 1 of 1</span>
+    <a class="small" href="{{ url_for('dashboard.home') }}">Skip for now</a>
+  </div>
+  <h1>Set up your contributor profile</h1>
+  <form method="post" class="card p-4 mt-3">
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">{{ form.city.label(class='form-label') }}{{ form.city(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.country.label(class='form-label') }}{{ form.country(class='form-control') }}</div>
+      <div class="col-md-4">{{ form.availability_hours.label(class='form-label') }}{{ form.availability_hours(class='form-control') }}</div>
+      <div class="col-md-8">{{ form.domain_interests.label(class='form-label') }}{{ form.domain_interests(class='form-select', multiple=true, size=6) }}</div>
+      <div class="col-12">{{ form.skills.label(class='form-label') }}{{ form.skills(class='form-select', multiple=true, size=10) }}</div>
+      <div class="col-12 form-check">{{ form.is_open_to_projects(class='form-check-input') }} {{ form.is_open_to_projects.label(class='form-check-label') }}</div>
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Complete Onboarding</button>
+  </form>
+</div>
+{% endblock %}

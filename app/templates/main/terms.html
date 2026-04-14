@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Service | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Terms of Service</li>
+    </ol>
+  </nav>
+
+  <h1>Terms of Service</h1>
+  <p>By using Quorum, you agree to create lawful civic projects, avoid harmful content, and respect collaborator rights and community guidelines.</p>
+  <h3>Acceptable Use</h3>
+  <p>Users must not post unlawful, deceptive, or abusive content and must follow all applicable laws.</p>
+  <h3>Subscriptions</h3>
+  <p>Paid plans are billed in INR and may be changed or canceled according to your account settings.</p>
+
+  <div class="d-flex gap-3 mt-4">
+    <a href="javascript:history.back()">Back</a>
+    <a href="{{ url_for('main.privacy') }}">Privacy Policy</a>
+  </div>
+</div>
+{% endblock %}

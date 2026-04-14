@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Verify Your Email | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5" style="max-width:680px;">
+  <div class="card p-4">
+    <h1>Verify your email</h1>
+    <p>Please check your inbox for a verification link. You must verify before publishing projects.</p>
+    {% if show_resend_form %}
+      <form method="post" class="mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label">Email</label>
+        <input class="form-control" type="email" name="email" required>
+        <button class="btn btn-primary btn-sm mt-2" type="submit">Resend verification email</button>
+      </form>
+    {% endif %}
+    <div class="d-flex gap-3 mt-3">
+      <a class="btn btn-outline-secondary" href="{{ url_for('auth.resend_verification') }}">Resend verification email</a>
+      <a class="btn btn-link" href="{{ url_for('auth.login') }}">Go to Login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

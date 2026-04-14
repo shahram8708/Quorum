@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Step 5 | Quorum Wizard{% endblock %}
+{% block content %}
+<div class="wizard-page container py-5 mt-5">
+  <div class="d-flex justify-content-end mb-2">
+    <form method="post" action="{{ url_for('create.save_draft') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-secondary btn-sm">Save & Exit</button>
+    </form>
+  </div>
+  {% include 'wizard/_progress.html' %}
+  <h2>Step 5 of 6: Set timeline</h2>
+  <form method="post" class="card p-4 mt-3">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">{{ form.start_date.label(class='form-label') }}{{ form.start_date(class='form-control') }}</div>
+    <div class="row g-2 mb-3">
+      {% for value, label in form.timeline_days.choices %}
+      <div class="col-md-3">
+        <label class="card p-3 selectable-card">
+          <input type="radio" class="form-check-input" name="timeline_days" value="{{ value }}" {% if form.timeline_days.data == value %}checked{% endif %}>
+          <span class="fw-semibold mt-2">{{ label }}</span>
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">{{ form.custom_end_date.label(class='form-label') }}{{ form.custom_end_date(class='form-control') }}</div>
+    <div class="mt-4 d-flex justify-content-between">
+      <a class="btn btn-outline-secondary" href="{{ url_for('create.step_4') }}">Back</a>
+      <button class="btn btn-primary" type="submit">Next</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Pricing | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Pricing</li>
+    </ol>
+  </nav>
+
+  <h1>Pricing (INR)</h1>
+  <div class="row g-3 mt-2">
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4>Free</h4>
+          <p class="display-6">INR 0</p>
+          <p>Free forever for contributors.</p>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.signup') }}">Get Started</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 border-warning">
+        <div class="card-body">
+          <h4>Creator Pro</h4>
+          <p class="display-6">INR 749</p>
+          <p>Advanced creator tools and priority visibility.</p>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.signup', plan='creator_pro') }}">Upgrade</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4>Org Starter</h4>
+          <p class="display-6">INR 4,999</p>
+          <p>Challenge posting, org discovery, impact analytics.</p>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.signup', type='organization', plan='org_starter') }}">Get Started</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4>Org Team</h4>
+          <p class="display-6">INR 14,999</p>
+          <p>Expanded team controls and higher challenge credits.</p>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('auth.signup', type='organization', plan='org_team') }}">Upgrade</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <a class="btn btn-link" href="{{ url_for('main.contact_get') }}">Contact Sales</a>
+    <a class="btn btn-link" href="#pricing-faq">Go to FAQ</a>
+  </div>
+
+  <section id="pricing-faq" class="mt-4">
+    <h3>FAQ</h3>
+    <p class="mb-1"><a href="#faq-billing">How does billing work?</a></p>
+    <p class="mb-1"><a href="#faq-cancel">Can I cancel any time?</a></p>
+    <p class="mb-1"><a href="#faq-org">Do you offer enterprise plans?</a></p>
+
+    <div id="faq-billing" class="mt-3"><strong>How does billing work?</strong><p class="mb-2">Billing is monthly and managed through secure checkout.</p></div>
+    <div id="faq-cancel" class="mt-2"><strong>Can I cancel any time?</strong><p class="mb-2">Yes, you can manage subscription status from account billing settings.</p></div>
+    <div id="faq-org" class="mt-2"><strong>Do you offer enterprise plans?</strong><p class="mb-0">Yes. Contact sales for custom organization plans.</p></div>
+  </div>
+</div>
+{% endblock %}

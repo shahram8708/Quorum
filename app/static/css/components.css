@@ -1,0 +1,73 @@
+.project-card .text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.role-card,
+.task-card {
+  border: 1px solid #e8e8e8;
+}
+
+.reputation-badge {
+  background: #d5f5e3;
+  color: #145a32;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1e8449;
+  color: white;
+  font-weight: 600;
+}
+
+.avatar-sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatar-md {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.avatar-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.priority-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.priority-low {
+  background: #5dade2;
+}
+
+.priority-normal {
+  background: #27ae60;
+}
+
+.priority-high {
+  background: #f39c12;
+}
+
+.priority-urgent {
+  background: #e74c3c;
+}

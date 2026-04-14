@@ -1,0 +1,24 @@
+{% extends 'app_base.html' %}
+{% block title %}Notification Preferences | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('settings.account') }}">Settings</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Notification Preferences</li>
+{% endblock %}
+
+{% block app_content %}
+{% set active_settings_tab = 'notifications' %}
+{% include 'components/settings_tabs.html' %}
+
+<h2>Notification Preferences</h2>
+
+<form method="post" class="card p-4" style="max-width:760px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="application_received" {% if prefs.application_received %}checked{% endif %}> <label class="form-check-label">Application received emails</label></div>
+  <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="application_accepted" {% if prefs.application_accepted %}checked{% endif %}> <label class="form-check-label">Application accepted emails</label></div>
+  <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="weekly_digest" {% if prefs.weekly_digest %}checked{% endif %}> <label class="form-check-label">Weekly digest emails</label></div>
+  <div class="form-check mb-2"><input class="form-check-input" type="checkbox" name="mvt_alert" {% if prefs.mvt_alert %}checked{% endif %}> <label class="form-check-label">MVT alerts</label></div>
+  <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="browser_push" {% if prefs.browser_push %}checked{% endif %}> <label class="form-check-label">Browser push notifications</label></div>
+  <button class="btn btn-primary">Save Preferences</button>
+</form>
+{% endblock %}

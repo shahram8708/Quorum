@@ -1,0 +1,54 @@
+{% extends 'app_base.html' %}
+{% block title %}Organization Dashboard | Quorum{% endblock %}
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Org Dashboard</li>
+{% endblock %}
+{% block app_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>{{ org.org_name }}</h2>
+  <div class="d-flex gap-2">
+    <a class="btn btn-primary" href="{{ url_for('org.post_challenge') }}">Post a Civic Challenge</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('org.discover') }}">Discover Projects</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Projects Supported</h6><p>{{ impact.projects_supported }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Outcomes Achieved</h6><p>{{ impact.outcomes_achieved }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Participants Engaged</h6><p>{{ impact.participants_engaged }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>INR Grants</h6><p>{{ impact.grants_disbursed_inr }}</p></div></div></div>
+</div>
+
+<div class="card mb-3"><div class="card-body"><h5>Subscription</h5>
+  <p class="mb-0">Tier: <span class="badge text-bg-secondary">{{ org.subscription_tier|replace('_',' ')|title }}</span> | Challenge credits: {{ org.monthly_challenge_credits }}</p>
+  <div class="small mt-2">
+    <a href="{{ url_for('settings.billing') }}">Upgrade subscription</a> |
+    <a href="{{ url_for('settings.account') }}">Invite team member</a>
+  </div>
+</div></div>
+
+<div class="card">
+  <div class="card-body">
+    <h5>Active Challenges</h5>
+    {% for challenge in challenges %}
+    <div class="border rounded p-2 mb-2">
+      <strong>{{ challenge.title }}</strong>
+      <div class="small text-muted">{{ challenge.domain|title }} | {{ challenge.geographic_scope }} | {{ challenge.status|title }}</div>
+    </div>
+    {% else %}
+    <p class="text-muted">No challenges posted yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h5>Supported Projects</h5>
+    {% for project in projects_supported %}
+      <div class="small mb-2"><a href="{{ url_for('projects_public.detail', id=project.id) }}">{{ project.title }}</a></div>
+    {% else %}
+      <p class="text-muted mb-0">No supported projects yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

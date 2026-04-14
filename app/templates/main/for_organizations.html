@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}For Organizations | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">For Organizations</li>
+    </ol>
+  </nav>
+  <h1>For Organizations</h1>
+  <p class="lead">Support high-quality civic action with better discovery, funding channels, and impact reporting.</p>
+  <div class="row g-3">
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Discover</h5><p>Find top community-led initiatives by domain and geography.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Fund</h5><p>Post civic challenges and direct grants in INR.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Amplify</h5><p>Scale what works using outcomes and templates.</p></div></div></div>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-4">
+    <a href="{{ url_for('auth.signup', type='organization') }}" class="btn btn-primary">Create Organization Account</a>
+    <a href="{{ url_for('main.pricing') }}" class="btn btn-outline-secondary">View Pricing</a>
+    <a href="{{ url_for('main.contact_get') }}" class="btn btn-link">Contact Us</a>
+    <a href="{{ url_for('projects_public.board') }}" class="btn btn-link">Explore Sample Projects</a>
+  </div>
+</div>
+{% endblock %}

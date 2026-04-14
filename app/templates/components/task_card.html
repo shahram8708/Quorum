@@ -1,0 +1,19 @@
+<div class="card task-card mb-2" draggable="true" data-task-id="{{ task.id }}" data-version="{{ task.version }}">
+  <div class="card-body p-2">
+    <div class="d-flex justify-content-between align-items-start">
+      <strong class="small">{{ task.title }}</strong>
+      <span class="priority-dot priority-{{ task.priority }}"></span>
+    </div>
+    <p class="small text-muted mb-1">{{ task.description or '' }}</p>
+    <div class="d-flex justify-content-between align-items-center small">
+      {% if task.assignee %}
+        <a href="{{ url_for('profile.public_profile', username=task.assignee.username) }}" title="{{ task.assignee.full_name }}" target="_blank" rel="noopener">{{ task.assignee.full_name }}</a>
+      {% else %}
+        <span>Unassigned</span>
+      {% endif %}
+      {% if task.due_date %}
+        <span class="task-due">{{ task.due_date }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>

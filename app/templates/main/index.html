@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Quorum | Civic Action Platform{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5">
+  <div class="container py-5">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7">
+        <h1 class="display-4 text-white fw-bold">Turn civic concern into civic action.</h1>
+        <p class="lead text-light-green">Quorum connects motivated people, structured projects, and replicable templates - so that good intentions actually change things.</p>
+        <div class="d-flex gap-2 flex-wrap mt-4">
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-primary btn-lg">Start a Project</a>
+          <a href="{{ url_for('projects_public.board') }}" class="btn btn-outline-light btn-lg">Find a Project to Join</a>
+        </div>
+        <div class="d-flex flex-wrap gap-3 mt-3 small text-light">
+          <a class="text-light" href="{{ url_for('projects_public.board', status='completed') }}">1,240+ projects completed</a>
+          <a class="text-light" href="{{ url_for('projects_public.board') }}">8,400+ active contributors</a>
+          <a class="text-light" href="{{ url_for('templates.index') }}">340 action templates</a>
+          <a class="text-light" href="{{ url_for('main.for_organizations') }}">62 countries</a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card bg-white shadow-sm">
+          <div class="card-header fw-semibold">{{ widget_title }}</div>
+          <div class="card-body">
+            {% for project in nearby_projects %}
+            <div class="border rounded p-2 mb-2">
+              <h6 class="mb-1">{{ project.title }}</h6>
+              <div class="small text-muted">{{ project.domain|title }} | {{ project.roles|selectattr('is_filled', 'equalto', False)|list|length }} open roles</div>
+              <a class="small" href="{{ url_for('projects_public.detail', id=project.id) }}">View project</a>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No active projects found yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5 bg-white">
+  <div class="container">
+    <h2 class="mb-4">The gap between caring and changing.</h2>
+    <div class="row g-3">
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>You care about a problem.</h5><p>Millions care deeply but cannot find structured paths to contribute.</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Most good intentions stop here.</h5><p>Without role clarity and accountability, momentum fades quickly.</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Quorum bridges the gap.</h5><p>Projects, people, templates, and outcomes in one execution system.</p></div></div></div>
+    </div>
+    <p class="fw-bold mt-4">This is not another petition platform. This is the infrastructure for actual change.</p>
+  </div>
+</section>
+
+<section class="py-5 section-mint">
+  <div class="container">
+    <h2 class="mb-4">How Quorum works.</h2>
+    <ul class="nav nav-tabs" id="howTabs" role="tablist">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#creators">For Creators</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#contributors">For Contributors</button></li>
+    </ul>
+    <div class="tab-content bg-white border border-top-0 p-4">
+      <div class="tab-pane fade show active" id="creators">
+        <ol><li>Define problem and scope</li><li>Build minimum viable team</li><li>Execute milestones and publish outcomes</li></ol>
+      </div>
+      <div class="tab-pane fade" id="contributors">
+        <ol><li>Discover projects that match your skills</li><li>Apply for clear roles</li><li>Deliver measurable impact with your team</li></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5 bg-white">
+  <div class="container">
+    <h2>Real projects. Real outcomes.</h2>
+    <div class="row g-3 mt-1">
+      {% for project in completed_projects %}
+      <div class="col-md-4">{% include 'components/project_card.html' %}</div>
+      {% endfor %}
+    </div>
+    <a href="{{ url_for('projects_public.board', status='completed') }}" class="mt-3 d-inline-block">See all completed projects</a>
+  </div>
+</section>
+
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2>Proven civic action templates.</h2>
+    <div class="row g-3 mt-1">
+      {% for template in templates %}
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <span class="badge text-bg-secondary mb-2">{{ template.quality_tier|title }}</span>
+            <h5>{{ template.title }}</h5>
+            <p class="small text-muted">{{ template.domain|title }}</p>
+            <a href="{{ url_for('templates.detail', id=template.id) }}">View template</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="{{ url_for('templates.index') }}" class="mt-3 d-inline-block">Browse all templates</a>
+  </div>
+</section>
+
+<section class="py-5 section-dark">
+  <div class="container text-white">
+    <h2>For Organizations</h2>
+    <p>Discover, fund, and amplify high-quality civic projects with measurable outcomes.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.for_organizations') }}">For Organizations</a>
+  </div>
+</section>
+
+<section class="py-5 bg-white">
+  <div class="container">
+    <h2>Pricing Preview</h2>
+    <div class="row g-3">
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Free</h5><p>INR 0/month</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Creator Pro</h5><p>INR 749/month</p></div></div></div>
+      <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5>Org Starter</h5><p>INR 4,999/month</p></div></div></div>
+    </div>
+    <a href="{{ url_for('main.pricing') }}" class="mt-3 d-inline-block">See full pricing</a>
+  </div>
+</section>
+{% endblock %}

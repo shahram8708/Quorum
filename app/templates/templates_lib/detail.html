@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ template.title }} | Template{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('templates.index') }}">Templates</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ template.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="card">
+    <div class="card-body">
+      <span class="badge text-bg-secondary mb-2">{{ template.quality_tier|title }}</span>
+      <h2>{{ template.title }}</h2>
+      <p class="text-muted">Domain: {{ template.domain|title }}</p>
+      <h5>Problem Archetype</h5>
+      <p>{{ template.problem_archetype }}</p>
+      <h5>Recommended Roles</h5>
+      <ul>
+        {% for role in template.recommended_roles %}
+          <li><strong>{{ role.title }}</strong>: {{ role.description }}</li>
+        {% endfor %}
+      </ul>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <a href="{{ url_for('templates.start_from_template', id=template.id) }}" class="btn btn-primary">Start a Project from This Template</a>
+        <a href="{{ url_for('templates.index') }}" class="btn btn-outline-secondary">Back to Templates</a>
+        <a href="{{ url_for('projects_public.detail', id=template.source_project_id) }}" class="btn btn-link">View original project</a>
+      </div>
+    </div>
+  </div>
+
+  {% if related_templates %}
+    <div class="row g-3 mt-3">
+      {% for related in related_templates %}
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h6>{{ related.title }}</h6>
+              <a class="small" href="{{ url_for('templates.detail', id=related.id) }}">View template</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

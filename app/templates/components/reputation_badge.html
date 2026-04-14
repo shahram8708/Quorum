@@ -1,0 +1,3 @@
+{% if user.reputation_score and (user.rating_count or 0) >= 3 %}
+<span class="badge reputation-badge">Reputation {{ '%.2f'|format(user.reputation_score) }}/5</span>
+{% endif %}

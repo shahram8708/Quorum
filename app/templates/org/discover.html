@@ -1,0 +1,44 @@
+{% extends 'app_base.html' %}
+{% block title %}Organization Discover | Quorum{% endblock %}
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('org.dashboard') }}">Org Dashboard</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Discover Projects</li>
+{% endblock %}
+{% block app_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Discover Projects for Support</h2>
+  <button class="btn btn-outline-success ai-trigger" type="button" data-ai-endpoint="{{ url_for('org.ai_challenges') }}" data-ai-action="org_challenges">Challenge Discovery with AI</button>
+</div>
+<div class="ai-suggestion-box mb-3 d-none" id="ai-result-org-challenges"></div>
+
+<form class="card p-3 mb-4" method="get">
+  <div class="row g-2">
+    <div class="col-md-3"><input class="form-control" name="keyword" placeholder="Keyword" value="{{ request.args.get('keyword','') }}"></div>
+    <div class="col-md-2"><input class="form-control" name="domain" placeholder="Domain" value="{{ request.args.get('domain','') }}"></div>
+    <div class="col-md-2"><input class="form-control" name="status" placeholder="Status" value="{{ request.args.get('status','') }}"></div>
+    <div class="col-md-2"><input class="form-control" name="geographic_scope" placeholder="Scope" value="{{ request.args.get('geographic_scope','') }}"></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Filter</button></div>
+  </div>
+</form>
+
+<div class="row g-3">
+  {% for project in projects %}
+  <div class="col-md-4">
+    {% include 'components/project_card.html' %}
+    <form method="post" action="{{ url_for('org.message_creator', project_id=project.id) }}" class="mt-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form-control form-control-sm mb-1" name="message" placeholder="Message Creator">
+      <button class="btn btn-sm btn-outline-secondary">Message Creator</button>
+    </form>
+    <a class="btn btn-sm btn-outline-primary mt-2" href="{{ url_for('org.offer_support', project_id=project.id) }}">Offer Support</a>
+  </div>
+  {% else %}
+  <p class="text-muted">No projects found.</p>
+  {% endfor %}
+</div>
+
+<div class="d-flex gap-3 mt-3">
+  <a href="{{ url_for('org.post_challenge') }}">Post a Challenge</a>
+  <a href="{{ url_for('org.dashboard') }}">Back to Org Dashboard</a>
+</div>
+{% endblock %}

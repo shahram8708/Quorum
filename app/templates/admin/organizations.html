@@ -1,0 +1,31 @@
+{% extends 'app_base.html' %}
+{% block title %}Organizations | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Organizations</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Organizations</h2>
+
+{% for org in pagination.items %}
+  <div class="card mb-3"><div class="card-body">
+    <h5>{{ org.org_name }}</h5>
+    <p class="small text-muted">{{ org.org_type }} | {{ org.org_domain }}</p>
+    <p class="small">Owner: {{ org.owner.full_name if org.owner else 'N/A' }}</p>
+
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('org.dashboard') }}" target="_blank" rel="noopener">View Org Dashboard</a>
+      {% if not org.is_verified %}
+        <form method="post" action="{{ url_for('admin.verify_organization', id=org.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">Verify Org</button></form>
+      {% else %}
+        <form method="post" action="{{ url_for('admin.revoke_organization_verification', id=org.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Revoke Verification</button></form>
+      {% endif %}
+    </div>
+  </div></div>
+{% else %}
+  <p class="text-muted">No organizations found.</p>
+{% endfor %}
+
+{% include 'components/pagination.html' %}
+{% endblock %}

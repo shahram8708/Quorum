@@ -1,0 +1,25 @@
+{% extends 'app_base.html' %}
+{% block title %}Recommended for You | Quorum{% endblock %}
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('discover.index') }}">Discover</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Recommended For Me</li>
+{% endblock %}
+{% block app_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Recommended for You</h2>
+  <button class="btn btn-outline-success ai-trigger" type="button" data-ai-endpoint="{{ url_for('discover.ai_recommend') }}" data-ai-action="recommend">Refresh with AI</button>
+</div>
+<div class="ai-suggestion-box mb-3" id="ai-result-recommend">{{ explanation }}</div>
+<div class="row g-3">
+  {% for project in projects %}
+    <div class="col-md-4">{% include 'components/project_card.html' %}</div>
+  {% else %}
+    <p class="text-muted">No recommendations available yet.</p>
+  {% endfor %}
+</div>
+<div class="d-flex gap-3 mt-3">
+  <a href="{{ url_for('discover.index') }}">Browse all projects</a>
+  <a href="{{ url_for('profile.edit_profile') }}">Update my skills</a>
+  <a href="{{ url_for('discover.index') }}">Back to Discover</a>
+</div>
+{% endblock %}

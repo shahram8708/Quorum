@@ -1,0 +1,59 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+
+# Flask runtime files
+instance/
+.webassets-cache
+
+# Test, lint, and type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.nox/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Logs and local runtime state
+*.log
+logs/
+celerybeat-schedule
+
+# Local databases
+*.sqlite3
+*.db
+*.db-journal
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE/editor files
+.idea/
+.vscode/
+*.code-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini

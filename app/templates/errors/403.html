@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}403 Forbidden | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5 text-center">
+  <h1>Access Denied</h1>
+  <p>You don't have permission to access this page.</p>
+  <div class="d-flex justify-content-center gap-2 flex-wrap">
+    <button class="btn btn-outline-secondary" onclick="history.back()">Go back</button>
+    {% if current_user.is_authenticated %}
+      <a class="btn btn-primary" href="{{ url_for('dashboard.home') }}">Go to Dashboard</a>
+    {% else %}
+      <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Log In</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

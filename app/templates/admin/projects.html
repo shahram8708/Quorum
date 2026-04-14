@@ -1,0 +1,38 @@
+{% extends 'app_base.html' %}
+{% block title %}Flagged Projects | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Flagged Projects</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Flagged Projects</h2>
+
+<form method="get" class="card p-3 mb-3">
+  <div class="row g-2">
+    <div class="col-md-10"><input class="form-control" name="reason" placeholder="Filter by flag reason" value="{{ reason_filter }}"></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Filter</button></div>
+  </div>
+</form>
+
+{% for project in pagination.items %}
+  <div class="card mb-3"><div class="card-body">
+    <h5>{{ project.title }}</h5>
+    <p class="small text-muted">Reason: {{ project.flag_reason or 'Not specified' }}</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('projects_public.detail', id=project.id) }}" target="_blank" rel="noopener">View Public Page</a>
+      <form method="post" action="{{ url_for('admin.unflag_project', id=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">Unflag</button></form>
+      <form method="post" action="{{ url_for('admin.archive_project', id=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Archive</button></form>
+      <form method="post" action="{{ url_for('admin.warn_project_creator', id=project.id) }}" class="d-flex gap-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="form-control form-control-sm" name="message" placeholder="Warning message">
+        <button class="btn btn-sm btn-outline-secondary">Send Warning Email</button>
+      </form>
+    </div>
+  </div></div>
+{% else %}
+  <p class="text-muted">No flagged projects.</p>
+{% endfor %}
+
+{% include 'components/pagination.html' %}
+{% endblock %}

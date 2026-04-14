@@ -1,0 +1,13 @@
+<div class="border-bottom mb-4">
+  <ul class="nav nav-tabs border-0">
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_settings_tab == 'account' else '' }}" href="{{ url_for('settings.account') }}">Account</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_settings_tab == 'billing' else '' }}" href="{{ url_for('settings.billing') }}">Billing</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_settings_tab == 'notifications' else '' }}" href="{{ url_for('settings.notifications') }}">Notifications</a>
+    </li>
+  </ul>
+</div>

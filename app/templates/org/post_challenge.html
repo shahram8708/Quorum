@@ -1,0 +1,25 @@
+{% extends 'app_base.html' %}
+{% block title %}Post Civic Challenge | Quorum{% endblock %}
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('org.dashboard') }}">Org Dashboard</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Post a Civic Challenge</li>
+{% endblock %}
+{% block app_content %}
+<h2>Post a Civic Challenge</h2>
+<form method="post" class="card p-4 mt-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3"><label class="form-label">Title</label><input class="form-control" name="title" required></div>
+  <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" rows="5" name="description" required></textarea></div>
+  <div class="row g-2">
+    <div class="col-md-4"><label class="form-label">Domain</label><input class="form-control" name="domain" required></div>
+    <div class="col-md-4"><label class="form-label">Geography</label><input class="form-control" name="geographic_scope" required></div>
+    <div class="col-md-4"><label class="form-label">Grant Amount (paise)</label><input class="form-control" type="number" name="grant_amount_inr"></div>
+    <div class="col-md-4"><label class="form-label">Deadline</label><input class="form-control" type="date" name="deadline" required></div>
+  </div>
+  <div class="d-flex gap-2 mt-3">
+    <button class="btn btn-primary">Publish Challenge</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('org.dashboard') }}">Cancel</a>
+    <a class="btn btn-link" href="{{ url_for('main.pricing') }}">View pricing for challenge credits</a>
+  </div>
+</form>
+{% endblock %}

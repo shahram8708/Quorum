@@ -1,0 +1,59 @@
+{% extends 'app_base.html' %}
+{% block title %}User Management | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">All Users</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>User Management</h2>
+
+<form method="get" class="card p-3 mb-3">
+  <div class="row g-2">
+    <div class="col-md-3"><input class="form-control" name="q" placeholder="Search email or name" value="{{ request.args.get('q', '') }}"></div>
+    <div class="col-md-2"><input class="form-control" name="account_type" placeholder="Account type" value="{{ request.args.get('account_type', '') }}"></div>
+    <div class="col-md-2"><input class="form-control" name="subscription_tier" placeholder="Subscription tier" value="{{ request.args.get('subscription_tier', '') }}"></div>
+    <div class="col-md-2"><select class="form-select" name="is_verified"><option value="">Verified?</option><option value="true" {% if request.args.get('is_verified') == 'true' %}selected{% endif %}>True</option><option value="false" {% if request.args.get('is_verified') == 'false' %}selected{% endif %}>False</option></select></div>
+    <div class="col-md-2"><select class="form-select" name="is_admin"><option value="">Admin?</option><option value="true" {% if request.args.get('is_admin') == 'true' %}selected{% endif %}>True</option><option value="false" {% if request.args.get('is_admin') == 'false' %}selected{% endif %}>False</option></select></div>
+    <div class="col-md-1"><button class="btn btn-outline-secondary w-100">Go</button></div>
+  </div>
+</form>
+
+<table class="table table-sm align-middle">
+  <thead><tr><th>User</th><th>Type</th><th>Tier</th><th>Verified</th><th>Admin</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for user in pagination.items %}
+      <tr>
+        <td>
+          <div><strong>{{ user.full_name }}</strong></div>
+          <div class="small text-muted">{{ user.email }}</div>
+          <a class="small" href="{{ url_for('profile.public_profile', username=user.username) }}" target="_blank" rel="noopener">View Profile</a>
+        </td>
+        <td>{{ user.account_type }}</td>
+        <td>{{ user.subscription_tier }}</td>
+        <td>{{ user.is_verified }}</td>
+        <td>{{ user.is_admin }}</td>
+        <td>
+          <div class="d-flex flex-wrap gap-1">
+            {% if user.is_disabled %}
+              <form method="post" action="{{ url_for('admin.enable_user', id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-success">Enable Account</button></form>
+            {% else %}
+              <form method="post" action="{{ url_for('admin.disable_user', id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Disable Account</button></form>
+            {% endif %}
+
+            {% if user.is_admin %}
+              <form method="post" action="{{ url_for('admin.revoke_admin', id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-secondary">Revoke Admin</button></form>
+            {% else %}
+              <form method="post" action="{{ url_for('admin.grant_admin', id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-primary">Grant Admin</button></form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="text-muted">No users found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include 'components/pagination.html' %}
+{% endblock %}

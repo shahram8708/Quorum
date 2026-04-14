@@ -1,0 +1,44 @@
+{% extends 'app_base.html' %}
+{% block title %}Outcome Approval Queue | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Outcome Approvals</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Outcome Approval Queue</h2>
+
+{% for outcome in pagination.items %}
+  <div class="card mb-3"><div class="card-body">
+    <h5>{{ outcome.project.title }}</h5>
+    <p class="small text-muted mb-2">Submitted: {{ outcome.submitted_at.strftime('%Y-%m-%d') if outcome.submitted_at else '' }}</p>
+    <p>{{ outcome.outcome_achieved[:260] }}{% if outcome.outcome_achieved|length > 260 %}...{% endif %}</p>
+
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.outcome_detail', id=outcome.id) }}">View Full Outcome Report</a>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('projects_public.detail', id=outcome.project.id) }}" target="_blank" rel="noopener">View Project</a>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('profile.public_profile', username=outcome.project.creator.username) }}" target="_blank" rel="noopener">View Creator Profile</a>
+    </div>
+
+    <form method="post" action="{{ url_for('admin.approve_outcome', id=outcome.id) }}" class="d-flex gap-2 align-items-center mb-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select name="outcome_rating" class="form-select form-select-sm" style="max-width:220px;">
+        <option value="full_success">Full Success</option>
+        <option value="partial_success">Partial Success</option>
+        <option value="not_achieved">Not Achieved</option>
+      </select>
+      <button class="btn btn-sm btn-success">Approve</button>
+    </form>
+
+    <form method="post" action="{{ url_for('admin.reject_outcome', id=outcome.id) }}" class="d-flex gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form-control form-control-sm" name="reason" placeholder="Reason for rejection">
+      <button class="btn btn-sm btn-outline-danger">Reject</button>
+    </form>
+  </div></div>
+{% else %}
+  <p class="text-muted">No pending outcomes.</p>
+{% endfor %}
+
+{% include 'components/pagination.html' %}
+{% endblock %}

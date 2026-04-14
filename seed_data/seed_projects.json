@@ -1,0 +1,581 @@
+[
+    {
+        "title":  "Rainwater Harvesting Network - Ahmedabad Residential Colonies",
+        "domain":  "environment",
+        "geographic_scope":  "city",
+        "city":  "Ahmedabad",
+        "country":  "IN",
+        "status":  "active",
+        "project_type":  "physical_change",
+        "timeline_days":  90,
+        "roles":  [
+                      {
+                          "title":  "Water Systems Lead",
+                          "skills":  [
+                                         "Civil Engineering",
+                                         "Water Resource Engineering"
+                                     ],
+                          "hours_per_week":  8
+                      },
+                      {
+                          "title":  "Community Mobilizer",
+                          "skills":  [
+                                         "Community Outreach",
+                                         "Leadership"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Data Tracker",
+                          "skills":  [
+                                         "Data Analysis",
+                                         "GIS Mapping"
+                                     ],
+                          "hours_per_week":  4
+                      },
+                      {
+                          "title":  "Policy Liaison",
+                          "skills":  [
+                                         "Policy Research",
+                                         "Local Government Navigation"
+                                     ],
+                          "hours_per_week":  4
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Map rooftops and drains",
+                                             "Prioritize 25 societies"
+                                         ],
+                               "title":  "Colony Survey and Mapping"
+                           },
+                           {
+                               "tasks":  [
+                                             "Install 50 harvesting units",
+                                             "Train maintenance volunteers"
+                                         ],
+                               "title":  "Pilot Installations"
+                           },
+                           {
+                               "tasks":  [
+                                             "Document model",
+                                             "Expand to 100 societies"
+                                         ],
+                               "title":  "Scale Rollout"
+                           }
+                       ],
+        "team":  [
+                     "Aarav Patel",
+                     "Nisha Mehta",
+                     "Kunal Shah"
+                 ]
+    },
+    {
+        "title":  "Free Coding Bootcamp for Underprivileged Youth - Bangalore",
+        "domain":  "education",
+        "geographic_scope":  "city",
+        "city":  "Bangalore",
+        "country":  "IN",
+        "status":  "assembling",
+        "project_type":  "direct_service",
+        "timeline_days":  60,
+        "roles":  [
+                      {
+                          "title":  "Curriculum Mentor",
+                          "skills":  [
+                                         "Web Development",
+                                         "Education and Teaching"
+                                     ],
+                          "hours_per_week":  7
+                      },
+                      {
+                          "title":  "Placement Coordinator",
+                          "skills":  [
+                                         "Partnerships",
+                                         "HR Management"
+                                     ],
+                          "hours_per_week":  5
+                      },
+                      {
+                          "title":  "Volunteer Tutor",
+                          "skills":  [
+                                         "Teaching",
+                                         "Peer Support"
+                                     ],
+                          "hours_per_week":  6
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Enroll 80 learners",
+                                             "Run orientation"
+                                         ],
+                               "title":  "Learner Recruitment"
+                           },
+                           {
+                               "tasks":  [
+                                             "24 live sessions",
+                                             "Capstone demos"
+                                         ],
+                               "title":  "Bootcamp Delivery"
+                           }
+                       ],
+        "team":  [
+                     "Ritika Rao",
+                     "Pranav Iyer"
+                 ]
+    },
+    {
+        "title":  "Community Kitchen for Daily Wage Workers - Mumbai Dharavi",
+        "domain":  "food",
+        "geographic_scope":  "neighborhood",
+        "city":  "Mumbai",
+        "country":  "IN",
+        "status":  "completed",
+        "project_type":  "direct_service",
+        "timeline_days":  30,
+        "roles":  [
+                      {
+                          "title":  "Kitchen Operations Lead",
+                          "skills":  [
+                                         "Logistics",
+                                         "Nutrition"
+                                     ],
+                          "hours_per_week":  10
+                      },
+                      {
+                          "title":  "Supply Coordinator",
+                          "skills":  [
+                                         "Supply Chain",
+                                         "Procurement"
+                                     ],
+                          "hours_per_week":  8
+                      },
+                      {
+                          "title":  "Volunteer Lead",
+                          "skills":  [
+                                         "Volunteer Management",
+                                         "Community Facilitation"
+                                     ],
+                          "hours_per_week":  6
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Secure kitchen site",
+                                             "Obtain local approvals"
+                                         ],
+                               "title":  "Setup and Licensing"
+                           },
+                           {
+                               "tasks":  [
+                                             "Serve 1200 meals/week",
+                                             "Track beneficiary feedback"
+                                         ],
+                               "title":  "Meal Delivery"
+                           }
+                       ],
+        "team":  [
+                     "Imran Shaikh",
+                     "Sneha Desai",
+                     "Vikas Nair"
+                 ]
+    },
+    {
+        "title":  "Air Quality Monitoring Network - Delhi NCR",
+        "domain":  "environment",
+        "geographic_scope":  "city",
+        "city":  "Delhi",
+        "country":  "IN",
+        "status":  "active",
+        "project_type":  "research",
+        "timeline_days":  90,
+        "roles":  [
+                      {
+                          "title":  "Sensor Engineer",
+                          "skills":  [
+                                         "Arduino and Hardware",
+                                         "Data Engineering"
+                                     ],
+                          "hours_per_week":  8
+                      },
+                      {
+                          "title":  "Data Analyst",
+                          "skills":  [
+                                         "Data Visualization",
+                                         "Statistics"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Community Reporter",
+                          "skills":  [
+                                         "Citizen Journalism",
+                                         "Community Outreach"
+                                     ],
+                          "hours_per_week":  5
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Deploy 40 sensors",
+                                             "Calibrate devices"
+                                         ],
+                               "title":  "Sensor Deployment"
+                           },
+                           {
+                               "tasks":  [
+                                             "Publish AQI maps",
+                                             "Release weekly briefs"
+                                         ],
+                               "title":  "Open Dashboard"
+                           }
+                       ],
+        "team":  [
+                     "Dev Malhotra",
+                     "Aditi Singh"
+                 ]
+    },
+    {
+        "title":  "Mental Health Peer Support Circles - Chennai",
+        "domain":  "health",
+        "geographic_scope":  "city",
+        "city":  "Chennai",
+        "country":  "IN",
+        "status":  "assembling",
+        "project_type":  "direct_service",
+        "timeline_days":  60,
+        "roles":  [
+                      {
+                          "title":  "Peer Circle Facilitator",
+                          "skills":  [
+                                         "Mental Health",
+                                         "Peer Support"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Outreach Lead",
+                          "skills":  [
+                                         "Community Outreach",
+                                         "Public Speaking"
+                                     ],
+                          "hours_per_week":  5
+                      },
+                      {
+                          "title":  "Referral Coordinator",
+                          "skills":  [
+                                         "Public Health",
+                                         "Crisis Management"
+                                     ],
+                          "hours_per_week":  4
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Train 20 facilitators",
+                                             "Create safeguarding protocol"
+                                         ],
+                               "title":  "Facilitator Training"
+                           },
+                           {
+                               "tasks":  [
+                                             "Start 8 circles",
+                                             "Track attendance"
+                                         ],
+                               "title":  "Circle Launch"
+                           }
+                       ],
+        "team":  [
+                     "Lakshmi Krishnan",
+                     "Suraj Menon"
+                 ]
+    },
+    {
+        "title":  "Rural Women Entrepreneurship Marketplace - Rajasthan",
+        "domain":  "community",
+        "geographic_scope":  "national",
+        "city":  "Jaipur",
+        "country":  "IN",
+        "status":  "active",
+        "project_type":  "digital_tool",
+        "timeline_days":  90,
+        "roles":  [
+                      {
+                          "title":  "Marketplace Product Lead",
+                          "skills":  [
+                                         "Product Management",
+                                         "Mobile Development"
+                                     ],
+                          "hours_per_week":  8
+                      },
+                      {
+                          "title":  "Field Partnership Manager",
+                          "skills":  [
+                                         "Partnerships",
+                                         "Community Facilitation"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Training Coordinator",
+                          "skills":  [
+                                         "Education and Teaching",
+                                         "Leadership"
+                                     ],
+                          "hours_per_week":  5
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Onboard 15 SHGs",
+                                             "Catalogue 300 products"
+                                         ],
+                               "title":  "Cluster Onboarding"
+                           },
+                           {
+                               "tasks":  [
+                                             "Activate 50 buyers",
+                                             "Set up order workflows"
+                                         ],
+                               "title":  "Buyer Network"
+                           }
+                       ],
+        "team":  [
+                     "Priya Chauhan",
+                     "Harshit Jain",
+                     "Meera Kulkarni"
+                 ]
+    },
+    {
+        "title":  "Accessible Ramps and Infrastructure Audit - Pune",
+        "domain":  "civic_infrastructure",
+        "geographic_scope":  "city",
+        "city":  "Pune",
+        "country":  "IN",
+        "status":  "completed",
+        "project_type":  "advocacy",
+        "timeline_days":  60,
+        "roles":  [
+                      {
+                          "title":  "Accessibility Auditor",
+                          "skills":  [
+                                         "Architecture",
+                                         "Disability Inclusion"
+                                     ],
+                          "hours_per_week":  7
+                      },
+                      {
+                          "title":  "Municipal Liaison",
+                          "skills":  [
+                                         "Local Government Navigation",
+                                         "Policy Advocacy"
+                                     ],
+                          "hours_per_week":  5
+                      },
+                      {
+                          "title":  "Community Coordinator",
+                          "skills":  [
+                                         "Stakeholder Engagement",
+                                         "Event Planning"
+                                     ],
+                          "hours_per_week":  5
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Audit 120 public sites",
+                                             "Publish gap report"
+                                         ],
+                               "title":  "Audit and Report"
+                           },
+                           {
+                               "tasks":  [
+                                             "Install 20 ramps",
+                                             "Monitor usage"
+                                         ],
+                               "title":  "Pilot Retrofitting"
+                           }
+                       ],
+        "team":  [
+                     "Rohan Kadam",
+                     "Ananya Joshi"
+                 ]
+    },
+    {
+        "title":  "Digital Literacy for Senior Citizens - Hyderabad",
+        "domain":  "digital_access",
+        "geographic_scope":  "city",
+        "city":  "Hyderabad",
+        "country":  "IN",
+        "status":  "active",
+        "project_type":  "awareness",
+        "timeline_days":  60,
+        "roles":  [
+                      {
+                          "title":  "Training Lead",
+                          "skills":  [
+                                         "Education and Teaching",
+                                         "Public Speaking"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Volunteer Coordinator",
+                          "skills":  [
+                                         "Volunteer Management",
+                                         "Administration"
+                                     ],
+                          "hours_per_week":  5
+                      },
+                      {
+                          "title":  "Curriculum Designer",
+                          "skills":  [
+                                         "Instructional Design",
+                                         "UX Design"
+                                     ],
+                          "hours_per_week":  4
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Enroll 150 seniors",
+                                             "Design 4-week curriculum"
+                                         ],
+                               "title":  "Batch Setup"
+                           },
+                           {
+                               "tasks":  [
+                                             "Run neighborhood classes",
+                                             "Capture confidence scores"
+                                         ],
+                               "title":  "Delivery"
+                           }
+                       ],
+        "team":  [
+                     "Sowmya Reddy",
+                     "Aman Verma"
+                 ]
+    },
+    {
+        "title":  "Flood Early Warning System - Kerala Coastal Villages",
+        "domain":  "environment",
+        "geographic_scope":  "city",
+        "city":  "Kochi",
+        "country":  "IN",
+        "status":  "assembling",
+        "project_type":  "digital_tool",
+        "timeline_days":  90,
+        "roles":  [
+                      {
+                          "title":  "Disaster Data Lead",
+                          "skills":  [
+                                         "Data Engineering",
+                                         "Disaster Risk Reduction"
+                                     ],
+                          "hours_per_week":  8
+                      },
+                      {
+                          "title":  "Field Safety Coordinator",
+                          "skills":  [
+                                         "Crisis Management",
+                                         "Community Outreach"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "SMS Alert Manager",
+                          "skills":  [
+                                         "Communications",
+                                         "System Administration"
+                                     ],
+                          "hours_per_week":  4
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Map flood zones",
+                                             "Define threshold alerts"
+                                         ],
+                               "title":  "Risk Mapping"
+                           },
+                           {
+                               "tasks":  [
+                                             "Deploy pilot to 10 villages",
+                                             "Run mock drills"
+                                         ],
+                               "title":  "Alert Rollout"
+                           }
+                       ],
+        "team":  [
+                     "Neethu Varghese",
+                     "Faisal Rahman"
+                 ]
+    },
+    {
+        "title":  "Affordable Housing Advocacy Campaign - Kolkata",
+        "domain":  "housing",
+        "geographic_scope":  "national",
+        "city":  "Kolkata",
+        "country":  "IN",
+        "status":  "assembling",
+        "project_type":  "advocacy",
+        "timeline_days":  90,
+        "roles":  [
+                      {
+                          "title":  "Policy Research Lead",
+                          "skills":  [
+                                         "Policy Research",
+                                         "Economics"
+                                     ],
+                          "hours_per_week":  7
+                      },
+                      {
+                          "title":  "Campaign Manager",
+                          "skills":  [
+                                         "Campaign Management",
+                                         "PR and Media Relations"
+                                     ],
+                          "hours_per_week":  6
+                      },
+                      {
+                          "title":  "Legal Advisor",
+                          "skills":  [
+                                         "Law",
+                                         "Legal Drafting"
+                                     ],
+                          "hours_per_week":  4
+                      }
+                  ],
+        "milestones":  [
+                           {
+                               "tasks":  [
+                                             "Compile affordability evidence",
+                                             "Draft policy brief"
+                                         ],
+                               "title":  "Issue Dossier"
+                           },
+                           {
+                               "tasks":  [
+                                             "Townhall series",
+                                             "Media engagement"
+                                         ],
+                               "title":  "Public Campaign"
+                           }
+                       ],
+        "team":  [
+                     "Tanmoy Ghosh",
+                     "Rhea Banerjee",
+                     "Asha Das"
+                 ]
+    }
+]

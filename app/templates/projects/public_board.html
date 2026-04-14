@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Projects | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Projects</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Project Board</h1>
+    {% if current_user.is_authenticated %}
+      <a class="btn btn-primary" href="{{ url_for('create.start') }}">Start a Project</a>
+    {% else %}
+      <a class="btn btn-primary" href="{{ url_for('auth.signup') }}">Start a Project</a>
+    {% endif %}
+  </div>
+
+  <form class="card p-3 mb-4" method="get">
+    <div class="row g-2">
+      <div class="col-md-3"><input class="form-control" name="keyword" placeholder="Keyword" value="{{ request.args.get('keyword','') }}"></div>
+      <div class="col-md-2"><input class="form-control" name="domain" placeholder="Domain" value="{{ request.args.get('domain','') }}"></div>
+      <div class="col-md-2"><input class="form-control" name="status" placeholder="Status" value="{{ request.args.get('status','') }}"></div>
+      <div class="col-md-2"><input class="form-control" name="geographic_scope" placeholder="Scope" value="{{ request.args.get('geographic_scope','') }}"></div>
+      <div class="col-md-2">
+        <select class="form-select" name="sort">
+          <option value="newest">Newest</option>
+          <option value="most_urgent" {% if request.args.get('sort') == 'most_urgent' %}selected{% endif %}>Most Urgent</option>
+          <option value="near_me" {% if request.args.get('sort') == 'near_me' %}selected{% endif %}>Near Me</option>
+          <option value="highest_match" {% if request.args.get('sort') == 'highest_match' %}selected{% endif %}>Highest Match</option>
+        </select>
+      </div>
+      <div class="col-md-1"><button class="btn btn-outline-secondary w-100">Go</button></div>
+    </div>
+  </form>
+
+  <div class="d-flex flex-wrap gap-2 mb-3 small">
+    <a href="{{ url_for('projects_public.board', status='assembling') }}">Assembling</a>
+    <a href="{{ url_for('projects_public.board', status='active') }}">Active</a>
+    <a href="{{ url_for('projects_public.board', status='completed') }}">Completed</a>
+    <a href="{{ url_for('projects_public.board', domain='environment') }}">Environment</a>
+    <a href="{{ url_for('projects_public.board', domain='community') }}">Community</a>
+    <a href="{{ url_for('projects_public.board', domain='education') }}">Education</a>
+  </div>
+
+  <div class="row g-3">
+    {% for project in projects %}
+      <div class="col-md-4">{% include 'components/project_card.html' %}</div>
+    {% else %}
+      <p class="text-muted">No projects match your filters.</p>
+    {% endfor %}
+  </div>
+
+  {% set total_pages = ((total / per_page)|round(0, 'ceil'))|int if per_page else 1 %}
+  {% if total_pages > 1 %}
+    <nav aria-label="Projects pagination" class="mt-4">
+      <ul class="pagination">
+        {% if page > 1 %}
+          <li class="page-item"><a class="page-link" href="{{ url_for('projects_public.board', **request.args.to_dict(), page=page-1) }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page }} / {{ total_pages }}</span></li>
+        {% if page < total_pages %}
+          <li class="page-item"><a class="page-link" href="{{ url_for('projects_public.board', **request.args.to_dict(), page=page+1) }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/geo_filter.js') }}"></script>
+{% endblock %}

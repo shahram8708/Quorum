@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block page_root_class %}app-page-root{% endblock %}
+
+
+{% block navbar %}{% endblock %}
+{% block content %}
+{% set endpoint = request.endpoint or '' %}
+{% set is_admin_area = endpoint.startswith('admin.') %}
+{% set is_org_user = current_user.account_type == 'organization' and not is_admin_area %}
+
+<div class="app-shell d-flex">
+  <aside class="sidebar d-none d-md-flex flex-column">
+    <div class="sidebar-brand p-3 border-bottom border-secondary-subtle">
+      <a href="{{ url_for('main.index') }}" class="text-white text-decoration-none fw-bold">Quorum</a>
+    </div>
+
+    {% if is_admin_area and current_user.is_admin %}
+      <div class="sidebar-user p-3 border-bottom border-secondary-subtle">
+        <div class="text-white small fw-bold">{{ current_user.full_name }}</div>
+        <span class="badge text-bg-warning mt-1">Admin</span>
+      </div>
+      <nav class="sidebar-nav p-2 flex-grow-1 overflow-auto">
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-2">Overview</div>
+        <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'admin.dashboard' else '' }}">Admin Dashboard</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Moderation</div>
+        <a href="{{ url_for('admin.projects') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'admin.projects' else '' }}">
+          Flagged Projects
+          {% if flagged_projects_count > 0 %}<span class="badge bg-danger ms-auto">{{ flagged_projects_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('admin.outcomes') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.outcomes') else '' }}">
+          Outcome Approvals
+          {% if pending_outcomes_count > 0 %}<span class="badge bg-danger ms-auto">{{ pending_outcomes_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('admin.blog') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.blog') else '' }}">Blog Management</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Content</div>
+        <a href="{{ url_for('admin.templates') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.templates') else '' }}">Manage Templates</a>
+        <a href="{{ url_for('admin.challenges') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.challenges') else '' }}">Manage Challenges</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Users</div>
+        <a href="{{ url_for('admin.users') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'admin.users' else '' }}">All Users</a>
+        <a href="{{ url_for('admin.organizations') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.organizations') else '' }}">Organizations</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Platform</div>
+        <a href="{{ url_for('admin.analytics') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.analytics') else '' }}">Platform Analytics</a>
+        <a href="{{ url_for('admin.email_logs') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('admin.email_logs') else '' }}">Email Logs</a>
+
+        <div class="mt-3 border-top border-secondary-subtle pt-3">
+          <a href="{{ url_for('dashboard.home') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none">Back to Main Site</a>
+          <a href="{{ url_for('auth.logout') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none text-danger">Log Out</a>
+        </div>
+      </nav>
+
+    {% elif is_org_user %}
+      <div class="sidebar-user p-3 border-bottom border-secondary-subtle">
+        <div class="text-white small fw-bold">{{ org_account.org_name if org_account else current_user.full_name }}</div>
+        <span class="badge {{ 'text-bg-success' if org_account and org_account.is_verified else 'bg-secondary' }} mt-1">
+          {{ 'Verified Org' if org_account and org_account.is_verified else 'Organization' }}
+        </span>
+      </div>
+      <nav class="sidebar-nav p-2 flex-grow-1 overflow-auto">
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-2">Organization</div>
+        <a href="{{ url_for('org.dashboard') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.dashboard' else '' }}">Org Dashboard</a>
+        <a href="{{ url_for('org.discover') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.discover' else '' }}">Discover Projects</a>
+        <a href="{{ url_for('org.post_challenge') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.post_challenge' else '' }}">Post a Civic Challenge</a>
+        <a href="{{ url_for('org.dashboard') }}#impact" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none">Impact Reports</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Platform</div>
+        <a href="{{ url_for('projects_public.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/projects') else '' }}">Browse All Projects</a>
+        <a href="{{ url_for('templates.index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/templates') else '' }}">Template Library</a>
+        <a href="{{ url_for('main.pricing') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == '/pricing' else '' }}">Pricing & Plans</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Account</div>
+        <a href="{{ url_for('profile.public_profile', username=current_user.username) }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == url_for('profile.public_profile', username=current_user.username) else '' }}">My Profile</a>
+        <a href="{{ url_for('settings.account') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.account' else '' }}">Account Settings</a>
+        <a href="{{ url_for('settings.billing') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.billing' else '' }}">Billing</a>
+
+        <div class="mt-3 border-top border-secondary-subtle pt-3">
+          <a href="{{ url_for('auth.logout') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none text-danger">Log Out</a>
+        </div>
+      </nav>
+
+    {% else %}
+      <div class="sidebar-user p-3 border-bottom border-secondary-subtle">
+        <div class="d-flex align-items-center">
+          {% set sidebar_profile_photo = resolve_file_url(current_user.profile_photo_url) if current_user.profile_photo_url else None %}
+          {% if sidebar_profile_photo %}
+            <img src="{{ sidebar_profile_photo }}" class="rounded-circle me-2" width="36" height="36" alt="{{ current_user.full_name }}">
+          {% else %}
+            <span class="sidebar-avatar-fallback rounded-circle me-2" aria-hidden="true">
+              <i class="bi bi-person-fill"></i>
+            </span>
+          {% endif %}
+          <div>
+            <div class="text-white small fw-bold">{{ current_user.full_name }}</div>
+            {% if current_user.is_premium %}
+              <span class="badge" style="background-color: var(--quorum-orange); font-size: 10px;">{{ current_user.subscription_tier|upper|replace('_', ' ') }}</span>
+            {% else %}
+              <span class="badge bg-secondary" style="font-size: 10px;">FREE</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav p-2 flex-grow-1 overflow-auto">
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-2">Main</div>
+        <a href="{{ url_for('dashboard.home') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'dashboard.home' else '' }}">Dashboard</a>
+        <a href="{{ url_for('discover.index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('discover.') and endpoint != 'discover.recommended' else '' }}">Discover Projects</a>
+        <a href="{{ url_for('discover.recommended') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'discover.recommended' else '' }}">Recommended For Me</a>
+        <a href="{{ url_for('projects_public.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/projects') and not request.path.startswith('/projects/new') else '' }}">Browse All Projects</a>
+        <a href="{{ url_for('templates.index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/templates') else '' }}">Template Library</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">My Projects</div>
+        <a href="{{ url_for('create.start') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('create.') else '' }}">Start a New Project</a>
+        <a href="{{ url_for('manage.my_projects') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('manage.') else '' }}">
+          My Created Projects
+          {% if created_projects_count > 0 %}<span class="badge bg-secondary ms-auto">{{ created_projects_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('dashboard.contributions') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'dashboard.contributions' else '' }}">
+          Projects I've Joined
+          {% if joined_projects_count > 0 %}<span class="badge bg-secondary ms-auto">{{ joined_projects_count }}</span>{% endif %}
+        </a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Community</div>
+        <a href="{{ url_for('profile.public_profile', username=current_user.username) }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == url_for('profile.public_profile', username=current_user.username) else '' }}">My Public Profile</a>
+        <a href="{{ url_for('profile.edit_profile') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'profile.edit_profile' else '' }}">Edit Profile</a>
+        <a href="{{ url_for('dashboard.notifications_index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'dashboard.notifications_index' else '' }}">
+          Notifications
+          {% if unread_notification_count > 0 %}<span class="badge rounded-pill ms-auto" style="background-color: var(--quorum-orange);">{{ unread_notification_count }}</span>{% endif %}
+        </a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Platform</div>
+        <a href="{{ url_for('main.blog_index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/blog') else '' }}">Blog</a>
+        <a href="{{ url_for('main.for_organizations') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == '/for-organizations' else '' }}">For Organizations</a>
+        <a href="{{ url_for('main.contact_get') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == '/contact' else '' }}">Contact</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Account</div>
+        <a href="{{ url_for('settings.account') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.account' else '' }}">Settings</a>
+        <a href="{{ url_for('settings.billing') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.billing' else '' }}">Billing & Subscription</a>
+        <a href="{{ url_for('settings.notifications') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.notifications' else '' }}">Notification Preferences</a>
+
+        {% if current_user.is_admin %}
+          <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Admin</div>
+          <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none text-warning">Admin Panel</a>
+        {% endif %}
+
+        <div class="mt-3 border-top border-secondary-subtle pt-3">
+          <a href="{{ url_for('auth.logout') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none text-danger">Log Out</a>
+        </div>
+      </nav>
+    {% endif %}
+  </aside>
+
+  <section class="main-content-with-sidebar w-100">
+    <div class="container-fluid px-3 px-lg-4 py-3 py-lg-4">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          {% if is_admin_area and current_user.is_admin %}
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+          {% elif is_org_user %}
+            <li class="breadcrumb-item"><a href="{{ url_for('org.dashboard') }}">Org Dashboard</a></li>
+          {% else %}
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard.home') }}">Dashboard</a></li>
+          {% endif %}
+          {% block breadcrumbs %}{% endblock %}
+        </ol>
+      </nav>
+      {% block app_content %}{% endblock %}
+    </div>
+  </section>
+</div>
+
+{% if not is_admin_area and not is_org_user %}
+  <nav class="mobile-bottom-nav d-md-none">
+    <a class="mobile-nav-item {{ 'active' if endpoint == 'dashboard.home' else '' }}" href="{{ url_for('dashboard.home') }}"><span class="icon">H</span><span>Home</span></a>
+    <a class="mobile-nav-item {{ 'active' if endpoint.startswith('discover.') else '' }}" href="{{ url_for('discover.index') }}"><span class="icon">D</span><span>Discover</span></a>
+    <a class="mobile-nav-item mobile-nav-primary" href="{{ url_for('create.start') }}"><span class="icon">+</span><span>New</span></a>
+    <a class="mobile-nav-item {{ 'active' if endpoint.startswith('manage.') else '' }}" href="{{ url_for('manage.my_projects') }}"><span class="icon">P</span><span>Projects</span></a>
+    <a class="mobile-nav-item {{ 'active' if endpoint.startswith('profile.') else '' }}" href="{{ url_for('profile.public_profile', username=current_user.username) }}"><span class="icon">U</span><span>Profile</span></a>
+  </nav>
+{% endif %}
+{% endblock %}

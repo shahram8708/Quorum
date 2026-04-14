@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.title }} | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('projects_public.board') }}">Projects</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ project.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <span class="badge text-bg-light">{{ project.domain|title }}</span>
+      <h1 class="mt-2">{{ project.title }}</h1>
+      <p class="text-muted">{{ project.city }}, {{ project.country }} | {{ project.geographic_scope|replace('_',' ')|title }}</p>
+      <a class="small" href="{{ url_for('projects_public.board') }}">Back to Projects</a>
+    </div>
+    <div class="d-flex flex-column align-items-end gap-2">
+      <span class="badge text-bg-secondary">{{ project.status|replace('_',' ')|title }}</span>
+      {% if current_user.is_authenticated and is_creator %}
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('manage.manage_dashboard', id=project.id) }}" target="_blank" rel="noopener">Manage</a>
+      {% elif current_user.is_authenticated and is_member %}
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tasks.board', id=project.id) }}">Tasks</a>
+      {% endif %}
+      <button class="btn btn-sm btn-outline-secondary" type="button" id="copyProjectUrlBtn">Share</button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card mb-3"><div class="card-body"><h5>Problem Statement</h5><p>{{ project.problem_statement }}</p></div></div>
+      <div class="card mb-3"><div class="card-body"><h5>Success Definition</h5><p>{{ project.success_definition }}</p></div></div>
+      <div class="card mb-3"><div class="card-body"><h5>Timeline</h5><p>{{ project.start_date }} to {{ project.end_date }} ({{ project.timeline_days }} days)</p></div></div>
+
+      <div class="card mb-3" id="roles">
+        <div class="card-body">
+          <h5>Open Roles</h5>
+          {% for role in open_roles %}
+            {% include 'components/role_card.html' %}
+            {% if current_user.is_authenticated %}
+              {% set existing_application = user_applications_by_role_id.get(role.id) %}
+              {% if existing_application %}
+                <div class="alert alert-info py-2 px-3 mb-2" role="alert">
+                  You already applied to this project for the <strong>{{ role.title }}</strong> role.
+                  {% if existing_application.status == 'pending' %}
+                    Your application is currently pending review.
+                  {% elif existing_application.status == 'accepted' %}
+                    You are already selected for this role.
+                  {% else %}
+                    This application has already been reviewed.
+                  {% endif %}
+                </div>
+                <button class="btn btn-outline-secondary btn-sm mb-3" type="button" disabled aria-disabled="true">Already Applied</button>
+              {% elif current_user.id == project.creator_user_id %}
+                <button class="btn btn-outline-secondary btn-sm mb-3" type="button" disabled aria-disabled="true">Project Creator</button>
+              {% else %}
+                <a class="btn btn-primary btn-sm mb-3" href="{{ url_for('projects_public.apply_role', id=project.id, role_id=role.id) }}">Apply for {{ role.title }}</a>
+              {% endif %}
+            {% endif %}
+          {% else %}
+            <p class="text-muted">No open roles.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if project.status == 'completed' and project.outcome %}
+      <div class="card" id="outcome-report"><div class="card-body"><h5>Outcome Report</h5><p>{{ project.outcome.outcome_achieved }}</p></div></div>
+      <a class="small d-inline-block mt-2" href="#outcome-report">View Outcome Report</a>
+      {% endif %}
+
+      {% if project.template_id %}
+        <div class="mt-3">
+          <a href="{{ url_for('templates.detail', id=project.template_id) }}">View Template</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6>Current Team</h6>
+          <div class="small">Creator: <a href="{{ url_for('profile.public_profile', username=project.creator.username) }}">{{ project.creator.full_name }}</a></div>
+          {% for role in project.roles if role.is_filled %}
+            <div class="small">{{ role.title }}: {% if role.filled_by_user %}<a href="{{ url_for('profile.public_profile', username=role.filled_by_user.username) }}">{{ role.filled_by_user.full_name }}</a>{% else %}N/A{% endif %}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h6>Recent Feed</h6>
+          {% for post in feed_posts %}
+            <div class="small mb-2"><strong><a href="{{ url_for('profile.public_profile', username=post.author.username) }}">{{ post.author.full_name }}</a></strong>: {{ post.content[:90] }}</div>
+          {% else %}
+            <p class="small text-muted">No activity yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const copyBtn = document.querySelector('#copyProjectUrlBtn');
+  if (!copyBtn) return;
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => { copyBtn.textContent = 'Share'; }, 1200);
+    } catch (_error) {
+      copyBtn.textContent = 'Copy failed';
+      setTimeout(() => { copyBtn.textContent = 'Share'; }, 1200);
+    }
+  });
+})();
+</script>
+{% endblock %}

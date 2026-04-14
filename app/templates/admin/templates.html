@@ -1,0 +1,48 @@
+{% extends 'app_base.html' %}
+{% block title %}Manage Templates | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Manage Templates</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Manage Templates</h2>
+
+<form method="get" class="card p-3 mb-3">
+  <div class="row g-2">
+    <div class="col-md-10"><input class="form-control" name="q" placeholder="Search templates" value="{{ q }}"></div>
+    <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Search</button></div>
+  </div>
+</form>
+
+{% for template in pagination.items %}
+  <div class="card mb-3"><div class="card-body">
+    <h5>{{ template.title }}</h5>
+    <p class="small text-muted">{{ template.domain|title }} | {{ template.quality_tier|title }}</p>
+
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('templates.detail', id=template.id) }}" target="_blank" rel="noopener">View Template</a>
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('projects_public.detail', id=template.source_project_id) }}" target="_blank" rel="noopener">View Source Project</a>
+
+      <form method="post" action="{{ url_for('admin.template_upgrade', id=template.id) }}" class="d-flex gap-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select class="form-select form-select-sm" name="quality_tier">
+          <option value="silver">Upgrade to Silver</option>
+          <option value="gold">Upgrade to Gold</option>
+          <option value="bronze">Downgrade to Bronze</option>
+        </select>
+        <button class="btn btn-sm btn-outline-secondary">Apply</button>
+      </form>
+
+      <form method="post" action="{{ url_for('admin.template_unpublish', id=template.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline-danger">Unpublish</button>
+      </form>
+    </div>
+  </div></div>
+{% else %}
+  <p class="text-muted">No templates found.</p>
+{% endfor %}
+
+{% include 'components/pagination.html' %}
+{% endblock %}

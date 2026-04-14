@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}About | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">About</li>
+    </ol>
+  </nav>
+
+  <h1>About Quorum</h1>
+  <p>Quorum helps communities turn civic concern into coordinated action with clear structure, measurable outcomes, and reusable templates.</p>
+  <h3>Mission</h3>
+  <p>Build the infrastructure for practical, collaborative civic action at local and global scales.</p>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <a class="btn btn-primary" href="{{ url_for('auth.signup') }}">Join the Platform</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('main.blog_index') }}">Read our Blog</a>
+    <a class="btn btn-link" href="{{ url_for('main.contact_get') }}">Contact Us</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5" style="max-width:720px;">
+  <h1>Create your Quorum account</h1>
+  <p class="text-muted mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Log In</a></p>
+  <form method="post" class="card p-4 mt-3">
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">{{ form.first_name.label(class='form-label') }}{{ form.first_name(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.last_name.label(class='form-label') }}{{ form.last_name(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.username.label(class='form-label') }}{{ form.username(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.account_type.label(class='form-label') }}{{ form.account_type(class='form-select', id='accountTypeSelect') }}</div>
+      <div class="col-md-12">{{ form.email.label(class='form-label') }}{{ form.email(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.password.label(class='form-label') }}{{ form.password(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.confirm_password.label(class='form-label') }}{{ form.confirm_password(class='form-control') }}</div>
+      <div class="col-12 form-check">{{ form.terms_accepted(class='form-check-input') }} {{ form.terms_accepted.label(class='form-check-label') }}</div>
+    </div>
+    <div id="orgInfo" class="alert alert-info mt-3 d-none">
+      Organization accounts can post civic challenges and support project teams.
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Create Account</button>
+  </form>
+  <a class="small d-inline-block mt-3" href="{{ url_for('main.index') }}">Back to Home</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const select = document.querySelector('#accountTypeSelect');
+  const orgInfo = document.querySelector('#orgInfo');
+  if (!select || !orgInfo) return;
+
+  const toggleOrgInfo = () => {
+    orgInfo.classList.toggle('d-none', select.value !== 'organization');
+  };
+
+  select.addEventListener('change', toggleOrgInfo);
+  toggleOrgInfo();
+})();
+</script>
+{% endblock %}

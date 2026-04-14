@@ -1,0 +1,38 @@
+{% extends 'app_base.html' %}
+{% block title %}Outcome Report | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('manage.my_projects') }}">My Projects</a></li>
+  <li class="breadcrumb-item"><a href="{{ url_for('manage.manage_dashboard', id=project.id) }}">{{ project.title }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Outcome Report</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Outcome Report: {{ project.title }}</h2>
+
+{% include 'components/project_inner_nav.html' %}
+
+<div class="mb-3">
+  <button class="btn btn-outline-success ai-trigger" type="button" data-ai-endpoint="{{ url_for('outcomes.ai_assist', id=project.id) }}" data-ai-action="outcome_assist" data-ai-target="#outcome_achieved">AI Assist</button>
+  <div class="ai-suggestion-box mt-2 d-none" id="ai-result-outcome"></div>
+</div>
+
+<form method="post" class="card p-4">
+  {{ form.hidden_tag() }}
+  <div class="mb-3">{{ form.outcome_achieved.label(class='form-label') }}{{ form.outcome_achieved(class='form-control', rows=4, id='outcome_achieved') }}</div>
+  <div class="mb-3">{{ form.measurable_data.label(class='form-label') }}{{ form.measurable_data(class='form-control', rows=3) }}</div>
+  <div class="row g-2">
+    <div class="col-md-6">{{ form.team_size_actual.label(class='form-label') }}{{ form.team_size_actual(class='form-control') }}</div>
+    <div class="col-md-6">{{ form.total_hours_estimated.label(class='form-label') }}{{ form.total_hours_estimated(class='form-control') }}</div>
+  </div>
+  <div class="mb-3 mt-3">{{ form.unexpected_challenges.label(class='form-label') }}{{ form.unexpected_challenges(class='form-control', rows=3) }}</div>
+  <div class="mb-3">{{ form.lessons_learned.label(class='form-label') }}{{ form.lessons_learned(class='form-control', rows=3) }}</div>
+  <div class="form-check">{{ form.would_recommend(class='form-check-input') }} {{ form.would_recommend.label(class='form-check-label') }}</div>
+  <div class="form-check">{{ form.was_continued(class='form-check-input') }} {{ form.was_continued.label(class='form-check-label') }}</div>
+  <div class="mb-3 mt-2">{{ form.continuation_description.label(class='form-label') }}{{ form.continuation_description(class='form-control', rows=2) }}</div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Submit Outcome Report</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Cancel, back to project</a>
+  </div>
+</form>
+{% endblock %}

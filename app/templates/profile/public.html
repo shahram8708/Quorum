@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}{{ user_profile.full_name }} | Profile{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item">Profile</li>
+      <li class="breadcrumb-item active" aria-current="page">{{ user_profile.username }}</li>
+    </ol>
+  </nav>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center gap-3">
+        {% set user = user_profile %}{% set size = 'lg' %}{% include 'components/user_avatar.html' %}
+        <div>
+          <h2 class="mb-0">{{ user_profile.full_name }}</h2>
+          <p class="text-muted mb-1">{{ user_profile.city }}, {{ user_profile.country }}</p>
+          <span class="badge {{ 'text-bg-success' if user_profile.is_open_to_projects else 'text-bg-secondary' }}">{{ 'Open to Projects' if user_profile.is_open_to_projects else 'Not Available' }}</span>
+          {% if current_user.is_authenticated and current_user.id == user_profile.id %}
+            <a class="btn btn-sm btn-outline-secondary ms-2" href="{{ url_for('profile.edit_profile') }}">Edit Profile</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card mb-3"><div class="card-body"><h5>Bio</h5><p>{{ user_profile.bio or 'No bio added yet.' }}</p></div></div>
+      <div class="card mb-3"><div class="card-body"><h5>Skills</h5>
+        {% for skill in user_profile.skills %}<span class="badge text-bg-light me-1 mb-1">{{ skill.name }}</span>{% else %}<p class="small text-muted">No skills listed.</p>{% endfor %}
+      </div></div>
+
+      <div class="card"><div class="card-body"><h5>Track Record</h5>
+        {% for item in track_record %}
+          <div class="border rounded p-2 mb-2">
+            <strong><a href="{{ url_for('projects_public.detail', id=item.project.id) }}">{{ item.project.title }}</a></strong>
+            <div class="small text-muted">Role: {{ item.role.title }} | Outcome: {{ item.project.outcome.outcome_rating if item.project.outcome else 'N/A' }}</div>
+            {% if item.avg_rating %}<div class="small">Average Rating: {{ item.avg_rating }}/5</div>{% endif %}
+            {% if item.testimonial %}<p class="small mb-0">"{{ item.testimonial }}"</p>{% endif %}
+          </div>
+        {% else %}
+          <p class="small text-muted">No completed project history yet.</p>
+        {% endfor %}
+      </div></div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3"><div class="card-body"><h6>Stats</h6>
+        <div class="small">Projects Completed: {{ user_profile.projects_completed }}</div>
+        <div class="small">Domains: {{ user_profile.domain_interests|length }}</div>
+        <div class="small">Availability: {{ user_profile.availability_hours or 0 }} hrs/week</div>
+      </div></div>
+
+      <div class="card mb-3"><div class="card-body"><h6>Badges</h6>
+        {% if badges.first_project %}<span class="badge text-bg-light me-1 mb-1" title="Completed first project">First Project</span>{% endif %}
+        {% if badges.five_projects %}<span class="badge text-bg-light me-1 mb-1" title="Completed five projects">5 Projects</span>{% endif %}
+        {% if badges.ten_projects %}<span class="badge text-bg-light me-1 mb-1" title="Completed ten projects">10 Projects</span>{% endif %}
+        {% if badges.domain_expert %}<span class="badge text-bg-light me-1 mb-1" title="High domain contribution consistency">Domain Expert</span>{% endif %}
+      </div></div>
+
+      {% if reputation_visible %}
+      <div class="card"><div class="card-body"><h6>Reputation</h6>
+        <div class="small mb-2">Overall: {{ user_profile.reputation_score }}/5</div>
+        <div class="small text-muted">Based on {{ user_profile.rating_count }} project ratings.</div>
+      </div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

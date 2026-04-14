@@ -1,0 +1,15 @@
+.wizard-progress {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.wizard-page .card {
+  border-radius: 14px;
+}
+
+.draft-status {
+  color: #5d6d7e;
+  font-size: 13px;
+}

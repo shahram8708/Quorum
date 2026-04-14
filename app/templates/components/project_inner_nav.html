@@ -1,0 +1,51 @@
+<div class="project-inner-nav border-bottom mb-4">
+  <ul class="nav nav-tabs border-0">
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_tab == 'overview' else '' }}" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Overview</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_tab == 'team' else '' }}" href="{{ url_for('manage.manage_team', id=project.id) }}">
+        Team
+        {% if pending_applications_count > 0 %}
+          <span class="badge rounded-pill bg-danger ms-1">{{ pending_applications_count }}</span>
+        {% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_tab == 'tasks' else '' }}" href="{{ url_for('tasks.board', id=project.id) }}">
+        Tasks
+        {% if overdue_tasks_count > 0 %}
+          <span class="badge rounded-pill bg-warning ms-1">{{ overdue_tasks_count }}</span>
+        {% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_tab == 'feed' else '' }}" href="{{ url_for('feed.index', id=project.id) }}">Feed</a>
+    </li>
+    {% if project.creator_user_id == current_user.id %}
+      {% set outcome_locked = project.status != 'completed' and project.end_date and project.end_date > today %}
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_tab == 'outcome' else '' }} {{ 'disabled' if outcome_locked else '' }}"
+           href="{{ url_for('outcomes.outcome_form', id=project.id) }}"
+           {% if outcome_locked %}data-bs-toggle="tooltip" title="Available when project ends or you manually close it"{% endif %}>
+          Outcome Report
+          {% if project.status == 'completed' and not project.outcome %}
+            <span class="badge rounded-pill bg-warning ms-1">!</span>
+          {% endif %}
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+
+  <div class="d-flex align-items-center gap-3 py-2 small text-muted flex-wrap">
+    <span>{{ project.city or 'Remote' }}, {{ project.country or 'Global' }}</span>
+    <span>{{ project.timeline_days }} days</span>
+    <span>
+      <div class="progress d-inline-block" style="width: 80px; height: 8px; vertical-align: middle;">
+        <div class="progress-bar" style="width: {{ project.completion_pct }}%; background-color: var(--quorum-mid-green);"></div>
+      </div>
+      {{ project.completion_pct|int }}% complete
+    </span>
+    <a href="{{ url_for('projects_public.detail', id=project.id) }}" target="_blank" rel="noopener" class="ms-auto text-decoration-none text-muted small">View Public Page</a>
+  </div>
+</div>

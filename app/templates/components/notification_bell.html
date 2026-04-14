@@ -1,0 +1,28 @@
+<div class="dropdown">
+  <button class="btn btn-outline-light btn-sm position-relative" data-bs-toggle="dropdown" aria-expanded="false">
+    Notifications
+    {% if unread_notifications_count > 0 %}
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">
+        {{ unread_notifications_count }}
+      </span>
+    {% endif %}
+  </button>
+  <div class="dropdown-menu dropdown-menu-end p-2 notification-dropdown">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <strong>Unread</strong>
+      <a href="{{ url_for('dashboard.notifications_index', mark_all=1) }}" class="small">Mark all read</a>
+    </div>
+    {% if recent_unread_notifications %}
+      {% for note in recent_unread_notifications %}
+        <a class="dropdown-item small" href="{{ note.link or url_for('dashboard.notifications_index') }}">
+          <div class="fw-semibold">{{ note.title }}</div>
+          <div class="text-muted">{{ note.message }}</div>
+        </a>
+      {% endfor %}
+    {% else %}
+      <div class="small text-muted px-2">No unread notifications.</div>
+    {% endif %}
+    <hr class="my-2">
+    <a href="{{ url_for('dashboard.notifications_index') }}" class="small px-2">See all</a>
+  </div>
+</div>

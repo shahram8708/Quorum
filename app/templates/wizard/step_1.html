@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Step 1 | Quorum Wizard{% endblock %}
+{% block content %}
+<div class="wizard-page container py-5 mt-5">
+  <div class="d-flex justify-content-end mb-2">
+    <form method="post" action="{{ url_for('create.save_draft') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline-secondary btn-sm">Save & Exit</button>
+    </form>
+  </div>
+  {% include 'wizard/_progress.html' %}
+  <h2>Step 1 of 6: Define the problem</h2>
+  <form method="post" class="card p-4 mt-3" id="wizardStep1Form">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">{{ form.title.label(class='form-label') }}{{ form.title(class='form-control') }}</div>
+    <div class="mb-3">
+      {{ form.problem_statement.label(class='form-label') }}
+      {{ form.problem_statement(class='form-control', rows=8, id='problemStatementInput') }}
+      <button class="btn btn-sm btn-outline-success mt-2 ai-trigger" type="button" data-ai-endpoint="{{ url_for('create.ai_enhance_description') }}" data-ai-action="enhance_description" data-ai-target="#problemStatementInput">Enhance with AI</button>
+      <div class="ai-suggestion-box mt-2 d-none" id="ai-result-enhance"></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-4">{{ form.domain.label(class='form-label') }}{{ form.domain(class='form-select') }}</div>
+      <div class="col-md-4">{{ form.geographic_scope.label(class='form-label') }}{{ form.geographic_scope(class='form-select') }}</div>
+      <div class="col-md-4">{{ form.city.label(class='form-label') }}{{ form.city(class='form-control') }}</div>
+      <div class="col-md-6">{{ form.country.label(class='form-label') }}{{ form.country(class='form-control') }}</div>
+      <div class="col-md-3">{{ form.latitude.label(class='form-label') }}{{ form.latitude(class='form-control') }}</div>
+      <div class="col-md-3">{{ form.longitude.label(class='form-label') }}{{ form.longitude(class='form-control') }}</div>
+    </div>
+    <div class="mt-4 d-flex justify-content-between">
+      <a class="btn btn-outline-secondary" href="{{ url_for('manage.my_projects') }}">Back</a>
+      <button class="btn btn-primary" type="submit">Next</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
+{% endblock %}

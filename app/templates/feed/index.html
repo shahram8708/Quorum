@@ -1,0 +1,105 @@
+{% extends 'app_base.html' %}
+{% block title %}Team Feed | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('manage.my_projects') }}">My Projects</a></li>
+  <li class="breadcrumb-item"><a href="{{ url_for('manage.manage_dashboard', id=project.id) }}">{{ project.title }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Feed</li>
+{% endblock %}
+
+{% block app_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Team Feed: {{ project.title }}</h2>
+  <div class="btn-group">
+    <a class="btn btn-outline-secondary {% if not decision_only %}active{% endif %}" href="{{ url_for('feed.index', id=project.id) }}">All Posts</a>
+    <a class="btn btn-outline-secondary {% if decision_only %}active{% endif %}" href="{{ url_for('feed.index', id=project.id, tab='decisions') }}">Decision Log</a>
+  </div>
+</div>
+
+{% include 'components/project_inner_nav.html' %}
+
+<form method="post" enctype="multipart/form-data" class="card p-3 mb-4">
+  {{ post_form.hidden_tag() }}
+  <div class="mb-2">{{ post_form.content(class='form-control', rows=3, placeholder='Share update...') }}</div>
+  <div class="d-flex gap-2 align-items-center">
+    {{ post_form.attachment(class='form-control form-control-sm') }}
+    <label class="form-check-label">{{ post_form.is_decision() }} Mark as decision</label>
+    <button class="btn btn-primary btn-sm">Post</button>
+  </div>
+</form>
+
+{% for post in pagination.items %}
+  <div class="card mb-3 {% if post.is_pinned %}border-warning{% endif %}">
+    <div class="card-body">
+      <div class="d-flex justify-content-between">
+        <div>
+          <strong><a href="{{ url_for('profile.public_profile', username=post.author.username) }}">{{ post.author.full_name }}</a></strong>
+          <span class="text-muted small">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          {% if post.is_decision %}<span class="badge text-bg-info ms-1">Decision</span>{% endif %}
+          {% if post.is_pinned %}<span class="badge text-bg-warning ms-1">Pinned</span>{% endif %}
+        </div>
+        {% if current_user.id == project.creator_user_id %}
+          <form method="post" action="{{ url_for('feed.pin', id=project.id, post_id=post.id) }}" class="pin-form" data-post-id="{{ post.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-secondary">{{ 'Unpin' if post.is_pinned else 'Pin' }}</button>
+          </form>
+        {% endif %}
+      </div>
+      <p class="mt-2 mb-2">{{ post.content }}</p>
+
+      {% for attachment in post.file_attachments %}
+        <a class="small d-block" target="_blank" href="{{ attachment.presigned_url }}">{{ attachment.filename }}</a>
+      {% endfor %}
+
+      <form method="post" action="{{ url_for('feed.reply', id=project.id, post_id=post.id) }}" class="mt-2">
+        {{ reply_form.hidden_tag() }}
+        {{ reply_form.content(class='form-control form-control-sm', placeholder='Write a reply...') }}
+        <button class="btn btn-sm btn-outline-primary mt-1">Reply</button>
+      </form>
+
+      {% for reply in post.replies %}
+        <div class="ms-4 mt-2 p-2 border-start">
+          <strong class="small"><a href="{{ url_for('profile.public_profile', username=reply.author.username) }}">{{ reply.author.full_name }}</a></strong>
+          <span class="small text-muted">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+          <p class="small mb-1">{{ reply.content }}</p>
+          {% for attachment in reply.file_attachments %}
+            <a class="small d-block" target="_blank" href="{{ attachment.presigned_url }}">{{ attachment.filename }}</a>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <p class="text-muted">No feed posts yet.</p>
+{% endfor %}
+
+{% if pagination.has_next %}
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('feed.index', id=project.id, page=pagination.next_num, tab='decisions' if decision_only else None) }}">Load more posts</a>
+{% endif %}
+
+<a class="small d-inline-block mt-3" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Back to Project Overview</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const forms = document.querySelectorAll('.pin-form');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  forms.forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+      if (response.ok) {
+        window.location.reload();
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

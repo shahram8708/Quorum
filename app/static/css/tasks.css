@@ -1,0 +1,53 @@
+.kanban-column {
+  background: #f7fbf9;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 12px;
+  min-height: 460px;
+}
+
+.task-list {
+  min-height: 360px;
+}
+
+.task-card {
+  cursor: grab;
+}
+
+.task-card.dragging {
+  opacity: 0.7;
+}
+
+.task-due {
+  color: #5d6d7e;
+}
+
+.task-due.overdue {
+  color: #c0392b;
+}
+
+.confetti {
+  animation: pop 0.45s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 991px) {
+  .kanban-column {
+    min-height: 120px;
+  }
+
+  .task-list {
+    min-height: 60px;
+  }
+}

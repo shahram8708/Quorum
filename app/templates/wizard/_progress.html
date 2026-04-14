@@ -1,0 +1,24 @@
+<div class="wizard-progress mb-4">
+  <div class="progress" style="height:8px;">
+    <div class="progress-bar" style="width: {{ (step / 6 * 100)|round(0) }}%"></div>
+  </div>
+  <div class="d-flex justify-content-between small mt-2 flex-wrap gap-2">
+    {% set labels = [
+      (1, 'Problem'),
+      (2, 'Type'),
+      (3, 'Success'),
+      (4, 'Team'),
+      (5, 'Timeline'),
+      (6, 'Resources')
+    ] %}
+    {% for step_no, label in labels %}
+      {% if step_no == step %}
+        <span class="fw-semibold">{{ step_no }} {{ label }}</span>
+      {% elif step_no <= completed_until %}
+        <a href="{{ url_for('create.step_' ~ step_no) }}">{{ step_no }} {{ label }}</a>
+      {% else %}
+        <span class="text-muted">{{ step_no }} {{ label }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

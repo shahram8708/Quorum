@@ -1,0 +1,7 @@
+<span class="avatar avatar-{{ size or 'md' }}" title="{{ user.full_name }}">
+  {% if user.profile_photo_url %}
+    <img src="{{ resolve_file_url(user.profile_photo_url) }}" alt="{{ user.full_name }}" class="rounded-circle">
+  {% else %}
+    {{ user.first_name[:1] }}{{ (user.last_name or '')[:1] }}
+  {% endif %}
+</span>

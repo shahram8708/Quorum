@@ -1,0 +1,23 @@
+{% extends 'app_base.html' %}
+{% block title %}Manage Challenges | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Manage Challenges</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Manage Challenges</h2>
+
+{% for challenge in pagination.items %}
+  <div class="card mb-3"><div class="card-body">
+    <h5>{{ challenge.title }}</h5>
+    <p class="small text-muted">{{ challenge.domain|title }} | {{ challenge.geographic_scope }} | {{ challenge.status|title }}</p>
+    <p class="mb-1">Grant: INR {{ challenge.grant_amount_inr or 0 }}</p>
+    <p class="small text-muted mb-0">Deadline: {{ challenge.deadline }}</p>
+  </div></div>
+{% else %}
+  <p class="text-muted">No challenges found.</p>
+{% endfor %}
+
+{% include 'components/pagination.html' %}
+{% endblock %}

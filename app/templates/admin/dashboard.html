@@ -1,0 +1,46 @@
+{% extends 'app_base.html' %}
+{% block title %}Admin Dashboard | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Admin Dashboard</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <a class="card h-100 text-decoration-none" href="{{ url_for('admin.projects') }}"><div class="card-body"><h6>Flagged Projects</h6><p class="display-6 mb-0">{{ stats.flagged_projects }}</p></div></a>
+  </div>
+  <div class="col-md-4">
+    <a class="card h-100 text-decoration-none" href="{{ url_for('admin.outcomes') }}"><div class="card-body"><h6>Pending Outcomes</h6><p class="display-6 mb-0">{{ stats.pending_outcomes }}</p></div></a>
+  </div>
+  <div class="col-md-4">
+    <a class="card h-100 text-decoration-none" href="{{ url_for('admin.users') }}"><div class="card-body"><h6>Total Users</h6><p class="display-6 mb-0">{{ stats.total_users }}</p></div></a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Active Projects</h6><p class="mb-0">{{ stats.active_projects }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Completed Projects</h6><p class="mb-0">{{ stats.completed_projects }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Templates</h6><p class="mb-0">{{ stats.total_templates }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Organizations</h6><p class="mb-0">{{ stats.organizations }}</p></div></div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5>Recent Activity</h5>
+      <a href="{{ url_for('main.index') }}" target="_blank" rel="noopener">View Platform</a>
+    </div>
+    {% for note in recent_activity %}
+      <div class="small border-bottom py-2">
+        <a href="{{ note.link or url_for('admin.dashboard') }}">{{ note.title }}</a>
+        <div class="text-muted">{{ note.message }}</div>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No recent activity.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

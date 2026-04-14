@@ -1,0 +1,23 @@
+{% extends 'app_base.html' %}
+{% block title %}Blog Management | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Blog Management</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Blog Management</h2>
+
+<div class="card">
+  <div class="card-body">
+    {% for post in posts %}
+      <div class="border-bottom py-2">
+        <strong>{{ post.title }}</strong>
+        <div class="small text-muted">{{ post.slug }}</div>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No blog posts found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'app_base.html' %}
+{% block title %}Platform Analytics | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item active" aria-current="page">Analytics</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>Platform Analytics</h2>
+
+<div class="d-flex flex-wrap gap-2 mb-3 small">
+  <a href="{{ url_for('admin.analytics', range='7d') }}">Last 7 days</a>
+  <a href="{{ url_for('admin.analytics', range='30d') }}">Last 30 days</a>
+  <a href="{{ url_for('admin.analytics', range='90d') }}">Last 90 days</a>
+  <a href="{{ url_for('admin.analytics', export='users_csv', range=range_key) }}">Export users CSV</a>
+  <a href="{{ url_for('admin.analytics', export='projects_csv', range=range_key) }}">Export projects CSV</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Users</h6><p class="display-6 mb-0">{{ metrics.new_users }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Projects</h6><p class="display-6 mb-0">{{ metrics.new_projects }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Completed Projects</h6><p class="display-6 mb-0">{{ metrics.completed_projects }}</p></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Templates</h6><p class="display-6 mb-0">{{ metrics.new_templates }}</p></div></div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'app_base.html' %}
+{% block title %}Outcome Detail | Admin{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('admin.outcomes') }}">Outcome Approvals</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Outcome #{{ outcome.id }}</li>
+{% endblock %}
+
+{% block app_content %}
+<h2>{{ outcome.project.title }} - Outcome Detail</h2>
+
+<div class="card mt-3">
+  <div class="card-body">
+    <h6>Outcome Achieved</h6>
+    <p>{{ outcome.outcome_achieved }}</p>
+
+    <h6>Measurable Data</h6>
+    <p>{{ outcome.measurable_data or 'N/A' }}</p>
+
+    <div class="row g-2">
+      <div class="col-md-6"><strong>Team Size:</strong> {{ outcome.team_size_actual }}</div>
+      <div class="col-md-6"><strong>Total Hours:</strong> {{ outcome.total_hours_estimated }}</div>
+    </div>
+
+    <h6 class="mt-3">Unexpected Challenges</h6>
+    <p>{{ outcome.unexpected_challenges }}</p>
+
+    <h6>Lessons Learned</h6>
+    <p>{{ outcome.lessons_learned }}</p>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('projects_public.detail', id=outcome.project.id) }}" target="_blank" rel="noopener">View Project</a>
+      <form method="post" action="{{ url_for('admin.approve_outcome', id=outcome.id) }}" class="d-flex gap-2 align-items-center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="outcome_rating" class="form-select form-select-sm" style="max-width:220px;">
+          <option value="full_success">Full Success</option>
+          <option value="partial_success">Partial Success</option>
+          <option value="not_achieved">Not Achieved</option>
+        </select>
+        <button class="btn btn-success btn-sm">Approve</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.reject_outcome', id=outcome.id) }}" class="d-flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="form-control form-control-sm" name="reason" placeholder="Reason for rejection">
+        <button class="btn btn-outline-danger btn-sm">Reject</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

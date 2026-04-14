@@ -1,0 +1,109 @@
+{% extends 'app_base.html' %}
+{% block title %}Project Management | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  {% if projects %}
+    <li class="breadcrumb-item active" aria-current="page">My Projects</li>
+  {% else %}
+    <li class="breadcrumb-item"><a href="{{ url_for('manage.my_projects') }}">My Projects</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('manage.manage_dashboard', id=project.id) }}">{{ project.title }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Manage</li>
+  {% endif %}
+{% endblock %}
+
+{% block app_content %}
+{% if projects %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>My Projects</h2>
+    <a class="btn btn-primary" href="{{ url_for('create.start') }}">Start a New Project</a>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-3 small">
+    <a href="{{ url_for('manage.my_projects') }}">All</a>
+    <a href="{{ url_for('manage.my_projects', status='draft') }}">Draft</a>
+    <a href="{{ url_for('manage.my_projects', status='assembling') }}">Assembling</a>
+    <a href="{{ url_for('manage.my_projects', status='active') }}">Active</a>
+    <a href="{{ url_for('manage.my_projects', status='completed') }}">Completed</a>
+  </div>
+
+  <div class="row g-3">
+    {% for project in projects %}
+      <div class="col-md-6 col-xl-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5>{{ project.title }}</h5>
+            <p class="small text-muted mb-2">{{ project.domain|title }} | {{ project.status|replace('_', ' ')|title }}</p>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Open Manage Dashboard</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted">You have not created any projects yet.</p>
+    {% endfor %}
+  </div>
+
+  <a class="small d-inline-block mt-3" href="{{ url_for('dashboard.home') }}">Back to Dashboard</a>
+{% else %}
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0">{{ project.title }}</h2>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('projects_public.detail', id=project.id) }}" target="_blank" rel="noopener">View Public Page</a>
+  </div>
+
+  {% include 'components/project_inner_nav.html' %}
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('manage.manage_team', id=project.id) }}">Review Applications</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('tasks.board', id=project.id) }}">Go to Task Board</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('feed.index', id=project.id) }}">Go to Feed</a>
+    {% if project.status == 'completed' %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('outcomes.outcome_form', id=project.id) }}">Write Outcome Report</a>
+    {% endif %}
+    {% if project.status in ['launch_ready', 'assembling'] %}
+      <form method="post" action="{{ url_for('manage.launch_project', id=project.id) }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary btn-sm">Launch Project</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4"><div class="card"><div class="card-body"><h6>Status</h6><p class="mb-0">{{ project.status|replace('_', ' ')|title }}</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h6>Completion</h6><p class="mb-0">{{ project.completion_pct }}%</p></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><h6>Pending Applications</h6><p class="mb-0">{{ pending_count }}</p></div></div></div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-body">
+      <h5>Recent Activity</h5>
+      {% for post in recent_activity %}
+        <div class="small mb-2">
+          <strong><a href="{{ url_for('profile.public_profile', username=post.author.username) }}" target="_blank" rel="noopener">{{ post.author.full_name }}</a></strong>: {{ post.content[:100] }}
+        </div>
+      {% else %}
+        <p class="small text-muted">No recent activity.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if project.applications %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <h5>Pending Applications</h5>
+        {% for app in project.applications if app.status == 'pending' %}
+          <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+            <div>
+              <strong>{{ app.applicant.full_name }}</strong>
+              <div class="small text-muted">{{ app.role.title }}</div>
+            </div>
+            <a class="small" href="{{ url_for('profile.public_profile', username=app.applicant.username) }}" target="_blank" rel="noopener">View Applicant Profile</a>
+          </div>
+        {% else %}
+          <p class="small text-muted mb-0">No pending applications.</p>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <a class="small d-inline-block mt-3" href="{{ url_for('manage.my_projects') }}">Back to My Projects</a>
+{% endif %}
+{% endblock %}

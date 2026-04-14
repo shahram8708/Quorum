@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Rate Teammates | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5" style="max-width:900px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('dashboard.home') }}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Rate Teammates</li>
+    </ol>
+  </nav>
+
+  <h1>Rate your teammates</h1>
+  <p class="text-muted">Project: {{ project.title }}</p>
+
+  <form method="post" class="card p-4">
+    {{ form.hidden_tag() }}
+    {% for teammate in teammates %}
+      <input type="hidden" name="rated_user_ids" value="{{ teammate.id }}">
+      <div class="border rounded p-3 mb-3">
+        <h5>{{ teammate.full_name }}</h5>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Follow Through</label>
+            <select class="form-select" name="follow_through_{{ teammate.id }}">{% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}</select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Collaboration</label>
+            <select class="form-select" name="collaboration_{{ teammate.id }}">{% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}</select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Quality</label>
+            <select class="form-select" name="quality_{{ teammate.id }}">{% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}</select>
+          </div>
+        </div>
+        <label class="form-label mt-2">Testimonial</label>
+        <textarea class="form-control" name="testimonial_{{ teammate.id }}" maxlength="1000"></textarea>
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">Submit Ratings</button>
+  </form>
+  <a class="small d-inline-block mt-3" href="{{ url_for('projects_public.detail', id=project.id) }}">Back to Project</a>
+</div>
+{% endblock %}
