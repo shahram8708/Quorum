@@ -6,7 +6,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from app.extensions import db, limiter
 from app.forms.auth_forms import ForgotPasswordForm, LoginForm, ResetPasswordForm, SignupForm
-from app.models import User
+from app.models import OrganizationAccount, User
 from app.services.email_service import send_password_reset_email, send_verification_email
 from app.utils import strip_html, utcnow
 
@@ -79,10 +79,29 @@ def _is_safe_redirect_target(target: str | None) -> bool:
     return test_url.scheme in {"http", "https"} and test_url.netloc == ref_url.netloc
 
 
+def _org_profile_complete(org_account: OrganizationAccount | None) -> bool:
+    if not org_account:
+        return False
+
+    required_values = [
+        org_account.org_name,
+        org_account.org_type,
+        org_account.org_domain,
+        org_account.mission_description,
+    ]
+    return all(bool((value or "").strip()) for value in required_values)
+
+
 def _post_login_redirect(user: User):
     next_url = request.form.get("next") or request.args.get("next")
     if _is_safe_redirect_target(next_url):
         return redirect(next_url)
+
+    if user.account_type == "organization":
+        org_account = OrganizationAccount.query.filter_by(owner_user_id=user.id).first()
+        if _org_profile_complete(org_account):
+            return redirect(url_for("org.dashboard"))
+        return redirect(url_for("settings.organization"))
 
     return redirect(url_for("dashboard.home"))
 
@@ -94,6 +113,12 @@ def signup():
         return redirect(url_for("onboarding.index") if current_user.needs_onboarding else url_for("dashboard.home"))
 
     form = SignupForm()
+
+    if request.method == "GET":
+        requested_type = strip_html(request.args.get("type", ""), 20).strip().lower()
+        if requested_type in {"individual", "organization"}:
+            form.account_type.data = requested_type
+
     if form.validate_on_submit():
         user = User(
             email=strip_html(form.email.data, 255).lower(),

@@ -1,0 +1,63 @@
+{% extends 'app_base.html' %}
+{% block title %}Organization Settings | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('settings.account') }}">Settings</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Organization</li>
+{% endblock %}
+
+{% block app_content %}
+{% set active_settings_tab = 'organization' %}
+{% include 'components/settings_tabs.html' %}
+
+<h2>Organization Profile</h2>
+{% if org_profile_complete %}
+  <div class="alert alert-success mt-3 mb-0">Your organization profile is complete.</div>
+{% else %}
+  <div class="alert alert-warning mt-3 mb-0">Complete your organization profile to use Org Dashboard, Discover, and Challenge tools.</div>
+{% endif %}
+
+<form method="post" class="card p-4 mt-3" style="max-width:860px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if next_target %}
+  <input type="hidden" name="next" value="{{ next_target }}">
+  {% endif %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label" for="orgNameInput">Organization Name</label>
+      <input id="orgNameInput" class="form-control" name="org_name" maxlength="300" required value="{{ form_data.org_name }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="orgTypeInput">Organization Type</label>
+      <input id="orgTypeInput" class="form-control" name="org_type" maxlength="100" placeholder="NGO, Foundation, CSR, Social Enterprise" required value="{{ form_data.org_type }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="orgDomainInput">Primary Domain</label>
+      <input id="orgDomainInput" class="form-control" name="org_domain" maxlength="200" placeholder="Education, Health, Environment" required value="{{ form_data.org_domain }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="logoUrlInput">Logo URL (optional)</label>
+      <input id="logoUrlInput" class="form-control" name="logo_url" maxlength="500" placeholder="https://..." value="{{ form_data.logo_url }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="missionInput">Mission Description</label>
+      <textarea id="missionInput" class="form-control" name="mission_description" rows="5" maxlength="3000" required>{{ form_data.mission_description }}</textarea>
+    </div>
+  </div>
+
+  <button class="btn btn-primary mt-3" type="submit">Save Organization Profile</button>
+</form>
+
+{% if org_account %}
+<div class="card mt-3" style="max-width:860px;">
+  <div class="card-body">
+    <h6 class="mb-2">Organization Plan</h6>
+    <p class="mb-0">
+      Tier: <span class="badge text-bg-secondary">{{ org_account.subscription_tier|replace('_', ' ')|title }}</span>
+      | Challenge credits: {{ org_account.monthly_challenge_credits }}
+    </p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

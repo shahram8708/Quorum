@@ -1,0 +1,45 @@
+{% extends 'app_base.html' %}
+{% block title %}Blog Categories | Admin — Quorum{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_blog.css') }}">
+{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('admin.blog') }}">Blog Management</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Categories</li>
+{% endblock %}
+
+{% block app_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Category Analytics</h1>
+  <a href="{{ url_for('admin.blog') }}" class="btn btn-outline-secondary btn-sm">Back to Blog</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="text-end">Posts</th>
+          <th class="text-end">Total Views</th>
+          <th class="text-end">Avg Reading Time</th>
+          <th>Last Post Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in categories %}
+        <tr>
+          <td><span class="badge text-bg-light border">{{ row.label }}</span></td>
+          <td class="text-end">{{ row.post_count }}</td>
+          <td class="text-end">{{ row.total_views }}</td>
+          <td class="text-end">{{ row.avg_reading_time }} min</td>
+          <td>{{ row.last_post_date.strftime('%d %b %Y') if row.last_post_date else '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

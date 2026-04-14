@@ -166,6 +166,19 @@ def register_context_processors(app: Flask) -> None:
                 return storage_path
             return generate_presigned_url(storage_path)
 
+        def pagination_url(target_page: int, endpoint: str | None = None) -> str:
+            endpoint_name = endpoint or request.endpoint
+            if not endpoint_name:
+                return request.path
+
+            route_values = dict(request.view_args or {})
+            query_values = request.args.to_dict(flat=True)
+            for key, value in query_values.items():
+                if key not in route_values:
+                    route_values[key] = value
+            route_values["page"] = target_page
+            return url_for(endpoint_name, **route_values)
+
         return {
             "unread_notifications_count": unread_count,
             "unread_notification_count": unread_count,
@@ -178,6 +191,7 @@ def register_context_processors(app: Flask) -> None:
             "today": date.today(),
             "env": app.config.get("ENV_RENDERED_VALUES", {}),
             "resolve_file_url": resolve_file_url,
+            "pagination_url": pagination_url,
         }
 
 

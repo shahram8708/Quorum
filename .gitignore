@@ -22,6 +22,7 @@ ENV/
 
 # Flask runtime files
 instance/
+local_storage/
 .webassets-cache
 
 # Test, lint, and type-check caches

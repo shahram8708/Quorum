@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
+from flask_wtf.file import FileField
 from wtforms import BooleanField, IntegerField, SelectMultipleField, StringField, TextAreaField
 from wtforms.validators import DataRequired, InputRequired, Length, NumberRange, Optional
 
@@ -27,7 +27,7 @@ class EditProfileForm(FlaskForm):
     skills = SelectMultipleField("Skills", coerce=int)
     profile_photo = FileField(
         "Profile Photo",
-        validators=[Optional(), FileAllowed(["jpg", "jpeg", "png", "gif"], "Images only")],
+        validators=[Optional()],
     )
 
 

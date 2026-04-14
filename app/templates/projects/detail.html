@@ -19,6 +19,12 @@
     </div>
     <div class="d-flex flex-column align-items-end gap-2">
       <span class="badge text-bg-secondary">{{ project.status|replace('_',' ')|title }}</span>
+      {% if current_user.is_authenticated and can_rate_peers %}
+        <a class="btn btn-sm btn-success" href="{{ url_for('projects_public.rate_peers', id=project.id) }}">Rate Teammates</a>
+      {% endif %}
+      {% if current_user.is_authenticated and can_view_peer_ratings %}
+        <a class="btn btn-sm btn-outline-success" href="{{ url_for('projects_public.project_ratings', id=project.id) }}">View Ratings</a>
+      {% endif %}
       {% if current_user.is_authenticated and is_creator %}
         <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('manage.manage_dashboard', id=project.id) }}" target="_blank" rel="noopener">Manage</a>
       {% elif current_user.is_authenticated and is_member %}

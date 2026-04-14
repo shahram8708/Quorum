@@ -13,17 +13,30 @@ Logger name: quorum.ai_service
 import json
 import logging
 import re
+import time
 import traceback
 from datetime import datetime
 from typing import Optional, Union
 
-from flask import current_app
+from flask import current_app, has_request_context
+from flask_login import current_user
 
 from app.extensions import db
-from app.models import AICivicPulseCache, User
+from app.models import AICivicPulseCache, AIUsageLog, User
 
 
 logger = logging.getLogger("quorum.ai_service")
+
+AI_FEATURE_NAME_MAP = {
+    "enhance_project_description": "description_enhancer",
+    "validate_project_scope": "scope_validator",
+    "suggest_project_roles": "role_suggester",
+    "personalized_recommendations": "recommendations",
+    "ai_template_search": "template_search",
+    "fetch_civic_pulse": "civic_pulse",
+    "generate_outcome_draft": "outcome_assistant",
+    "discover_civic_challenges": "challenge_discovery",
+}
 
 try:
     from google.api_core.exceptions import (
@@ -97,6 +110,84 @@ class AIService:
     def __init__(self):
         self.model = "gemini-2.5-flash"
 
+    def _feature_name(self, method_name: str) -> str:
+        return AI_FEATURE_NAME_MAP.get(method_name, str(method_name or "ai_call")[:100])
+
+    def _request_user_id(self) -> Optional[int]:
+        if not has_request_context():
+            return None
+
+        try:
+            if current_user.is_authenticated:
+                return int(current_user.id)
+        except Exception:
+            return None
+        return None
+
+    def _estimate_tokens(self, prompt: str, response_obj, response_text: str) -> int:
+        usage = getattr(response_obj, "usage_metadata", None) or getattr(response_obj, "usage", None)
+
+        candidates = []
+        if usage is not None:
+            for key in (
+                "total_token_count",
+                "total_tokens",
+                "totalTokenCount",
+                "totalTokens",
+            ):
+                if isinstance(usage, dict):
+                    value = usage.get(key)
+                else:
+                    value = getattr(usage, key, None)
+                if isinstance(value, int) and value > 0:
+                    candidates.append(value)
+
+            if not candidates:
+                prompt_tokens = None
+                completion_tokens = None
+                if isinstance(usage, dict):
+                    prompt_tokens = usage.get("prompt_token_count") or usage.get("prompt_tokens")
+                    completion_tokens = usage.get("candidates_token_count") or usage.get("completion_tokens")
+                else:
+                    prompt_tokens = getattr(usage, "prompt_token_count", None) or getattr(usage, "prompt_tokens", None)
+                    completion_tokens = getattr(usage, "candidates_token_count", None) or getattr(usage, "completion_tokens", None)
+
+                if isinstance(prompt_tokens, int) and isinstance(completion_tokens, int):
+                    candidates.append(max(1, prompt_tokens + completion_tokens))
+
+        if candidates:
+            return int(candidates[0])
+
+        # Fallback approximation when provider metadata is unavailable.
+        estimate = max(1, int((len(prompt or "") + len(response_text or "")) / 4))
+        return estimate
+
+    def _log_ai_usage(
+        self,
+        method_name: str,
+        response_time_ms: int,
+        was_successful: bool,
+        tokens_estimated: int,
+    ) -> None:
+        try:
+            with db.engine.begin() as connection:
+                connection.execute(
+                    AIUsageLog.__table__.insert().values(
+                        user_id=self._request_user_id(),
+                        feature_name=self._feature_name(method_name),
+                        called_at=datetime.utcnow(),
+                        response_time_ms=max(0, int(response_time_ms or 0)),
+                        was_successful=bool(was_successful),
+                        tokens_estimated=max(0, int(tokens_estimated or 0)),
+                    )
+                )
+        except Exception as error:
+            logger.warning(
+                "[AI SERVICE] Usage logging failed - method=%s error=%s",
+                method_name,
+                str(error),
+            )
+
     def _get_client(self):
         from google import genai
 
@@ -109,26 +200,42 @@ class AIService:
         client = self._get_client()
         logger.info(f"[AI SERVICE] Sending request to Gemini - method={method_name}")
 
-        if use_grounding:
-            from google.genai import types
+        started_at = time.perf_counter()
+        response = None
+        raw_text = ""
+        was_successful = False
 
-            grounding_tool = types.Tool(google_search=types.GoogleSearch())
-            config = types.GenerateContentConfig(tools=[grounding_tool])
-            response = client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=config,
-            )
-        else:
-            response = client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-            )
+        try:
+            if use_grounding:
+                from google.genai import types
 
-        raw_text = getattr(response, "text", None)
-        if raw_text is None:
-            raw_text = str(response)
-        return str(raw_text)
+                grounding_tool = types.Tool(google_search=types.GoogleSearch())
+                config = types.GenerateContentConfig(tools=[grounding_tool])
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                    config=config,
+                )
+            else:
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                )
+
+            raw_text = getattr(response, "text", None)
+            if raw_text is None:
+                raw_text = str(response)
+            was_successful = True
+            return str(raw_text)
+        finally:
+            elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+            tokens_estimated = self._estimate_tokens(prompt, response, str(raw_text or ""))
+            self._log_ai_usage(
+                method_name=method_name,
+                response_time_ms=elapsed_ms,
+                was_successful=was_successful,
+                tokens_estimated=tokens_estimated,
+            )
 
     def _find_balanced_json_block(self, text: str, start_index: int, opener: str, closer: str) -> Optional[str]:
         depth = 0

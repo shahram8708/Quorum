@@ -8,6 +8,19 @@
 <div class="mb-3">
   <a href="{{ url_for('profile.public_profile', username=current_user.username) }}" target="_blank" rel="noopener">View my public profile</a>
 </div>
+
+{% if current_user.profile_photo_url %}
+  <div class="card p-3 mb-3">
+    <div class="d-flex align-items-center gap-3">
+      <img src="{{ resolve_file_url(current_user.profile_photo_url) }}" alt="Current profile photo" class="rounded-circle" width="72" height="72" style="object-fit: cover;">
+      <div>
+        <div class="small text-muted">Current profile photo</div>
+        <div class="small">Upload a new image to replace this photo.</div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
 <form method="post" enctype="multipart/form-data" class="card p-4 mt-3">
   {{ form.hidden_tag() }}
   <div class="mb-3">{{ form.bio.label(class='form-label') }}{{ form.bio(class='form-control', rows=4) }}</div>
@@ -17,7 +30,11 @@
     <div class="col-md-4">{{ form.availability_hours.label(class='form-label') }}{{ form.availability_hours(class='form-control') }}</div>
     <div class="col-md-8">{{ form.domain_interests.label(class='form-label') }}{{ form.domain_interests(class='form-select', multiple=true, size=6) }}</div>
     <div class="col-12">{{ form.skills.label(class='form-label') }}{{ form.skills(class='form-select', multiple=true, size=10) }}</div>
-    <div class="col-12">{{ form.profile_photo.label(class='form-label') }}{{ form.profile_photo(class='form-control') }}</div>
+    <div class="col-12">
+      {{ form.profile_photo.label(class='form-label') }}
+      {{ form.profile_photo(class='form-control', accept='image/jpeg,image/png,image/gif,image/webp') }}
+      <div class="form-text">Accepted: JPG, PNG, GIF, WEBP. Development stores files locally; production stores files in S3.</div>
+    </div>
     <div class="col-12 form-check">{{ form.is_open_to_projects(class='form-check-input') }} {{ form.is_open_to_projects.label(class='form-check-label') }}</div>
   </div>
   <div class="d-flex gap-2 mt-3">

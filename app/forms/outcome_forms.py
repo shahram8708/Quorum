@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, IntegerField, SelectField, TextAreaField
+from wtforms import BooleanField, IntegerField, TextAreaField
 from wtforms.validators import InputRequired, Length, NumberRange, Optional
 
 
@@ -16,22 +16,6 @@ class OutcomeReportForm(FlaskForm):
 
 
 class PeerRatingForm(FlaskForm):
-    follow_through = SelectField(
-        "Follow Through",
-        coerce=int,
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        validators=[InputRequired()],
-    )
-    collaboration = SelectField(
-        "Collaboration",
-        coerce=int,
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        validators=[InputRequired()],
-    )
-    quality = SelectField(
-        "Quality",
-        coerce=int,
-        choices=[(1, "1"), (2, "2"), (3, "3"), (4, "4"), (5, "5")],
-        validators=[InputRequired()],
-    )
-    testimonial = TextAreaField("Testimonial", validators=[Optional(), Length(max=1000)])
+    # Dynamic per-teammate rating inputs are validated in the route.
+    # Keeping this form CSRF-only prevents false validation failures.
+    pass

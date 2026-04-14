@@ -41,6 +41,8 @@ def _s3_client():
 
 
 def _use_s3() -> bool:
+    if current_app.debug or current_app.testing:
+        return False
     return bool(current_app.config.get("USE_S3"))
 
 
@@ -102,6 +104,15 @@ def _ensure_local_storage_path(storage_path: str) -> Path:
 def upload_file_to_s3(file_object, filename, allowed_types=None):
     allowed = set(allowed_types or ALLOWED_MIME_TYPES)
 
+    original_filename = str(getattr(file_object, "filename", "") or "").strip()
+    requested_filename = str(filename or "").strip()
+    effective_filename = requested_filename or original_filename or "upload"
+
+    # If caller passes a logical name without extension (e.g. avatar_<id>),
+    # reuse the uploaded file extension so MIME guess and content-type checks remain accurate.
+    if not Path(effective_filename).suffix and Path(original_filename).suffix:
+        effective_filename = f"{effective_filename}{Path(original_filename).suffix}"
+
     data = file_object.read()
     file_object.seek(0)
 
@@ -109,11 +120,12 @@ def upload_file_to_s3(file_object, filename, allowed_types=None):
     if len(data) > max_size:
         raise FileHandlerError("File exceeds maximum size.")
 
-    mime_type = _detect_mime(data, filename)
+    mime_probe_name = original_filename or effective_filename
+    mime_type = _detect_mime(data, mime_probe_name)
     if mime_type not in allowed:
         raise FileHandlerError("Unsupported file type.")
 
-    storage_key = _build_storage_key(filename, mime_type)
+    storage_key = _build_storage_key(effective_filename, mime_type)
 
     if _use_s3():
         try:

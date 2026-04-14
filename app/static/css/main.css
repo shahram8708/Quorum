@@ -126,6 +126,19 @@ h4 {
   padding: 12px;
 }
 
+.project-completion-progress {
+  width: 88px;
+  height: 8px;
+  vertical-align: middle;
+  background-color: #dfe7e2;
+  overflow: hidden;
+}
+
+.project-completion-progress .project-completion-progress-bar {
+  background: linear-gradient(90deg, var(--quorum-light-green) 0%, var(--quorum-mid-green) 100%) !important;
+  background-color: var(--quorum-mid-green) !important;
+}
+
 .app-sidebar {
   background: var(--quorum-sidebar-bg);
 }
@@ -219,6 +232,45 @@ h4 {
   display: inline-flex;
   margin-top: 12px;
   line-height: 1.35;
+}
+
+.org-discover-grid > [class*="col-"] {
+  display: flex;
+}
+
+.org-discover-item {
+  width: 100%;
+  margin: 0;
+}
+
+.org-discover-item .project-card {
+  width: 100%;
+  margin: 0;
+  height: auto;
+}
+
+.org-discover-item .project-card .card-title,
+.org-discover-item .project-card p,
+.org-discover-item .project-card .small {
+  overflow-wrap: anywhere;
+}
+
+.org-discover-actions {
+  width: 100%;
+  border: 1px solid var(--quorum-border);
+  border-radius: 12px;
+  background: var(--quorum-off-white);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.org-discover-actions .form-control {
+  min-width: 0;
+}
+
+.org-discover-actions .btn {
+  width: 100%;
 }
 
 .mobile-nav-primary .icon {
@@ -317,5 +369,9 @@ h4 {
 
   .mobile-nav-item .icon {
     font-size: 22px;
+  }
+
+  .org-discover-item .card-body {
+    padding: 12px;
   }
 }

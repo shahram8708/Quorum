@@ -41,14 +41,26 @@ def _recompute_progress(project):
 @team_member_required
 def board(id):
     project = Project.query.get_or_404(id)
-    can_create_tasks = current_user.id == project.creator_user_id
-    members = [project.creator] + [role.filled_by_user for role in project.roles if role.filled_by_user]
+    is_creator = current_user.id == project.creator_user_id
+    can_create_tasks = is_creator
+    can_filter_by_assignee = is_creator
+
+    members_raw = [project.creator] + [role.filled_by_user for role in project.roles if role.filled_by_user]
+    members = []
+    seen_member_ids = set()
+    for member in members_raw:
+        if not member or member.id in seen_member_ids:
+            continue
+        seen_member_ids.add(member.id)
+        members.append(member)
+
     member_options = [(0, "Unassigned")] + [(member.id, member.full_name) for member in members if member]
 
     create_form = TaskCreateForm()
     create_form.assigned_to_user_id.choices = member_options
 
-    assignee_filter = request.args.get("assignee", type=int)
+    requested_assignee_filter = request.args.get("assignee", type=int)
+    assignee_filter = requested_assignee_filter if is_creator else current_user.id
     milestone_filter = request.args.get("milestone", type=int)
 
     tasks_query = Task.query.filter_by(project_id=id)
@@ -84,8 +96,9 @@ def board(id):
         overdue_tasks_count=overdue_tasks_count,
         assignee_filter=assignee_filter,
         milestone_filter=milestone_filter,
-        members=[member for member in members if member],
+        members=members,
         can_create_tasks=can_create_tasks,
+        can_filter_by_assignee=can_filter_by_assignee,
     )
 
 

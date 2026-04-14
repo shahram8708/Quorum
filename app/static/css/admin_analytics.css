@@ -1,0 +1,229 @@
+#analyticsApp {
+  --analytics-card-bg: #ffffff;
+  --analytics-card-border: #e5e7eb;
+}
+
+.analytics-range-control .btn.active {
+  background-color: var(--quorum-dark-green);
+  border-color: var(--quorum-dark-green);
+  color: #ffffff;
+}
+
+.analytics-section-title {
+  font-size: 1.1rem;
+  border-left: 4px solid var(--quorum-dark-green);
+  padding-left: 10px;
+  margin-bottom: 12px;
+}
+
+.analytics-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.analytics-kpi-card {
+  background: var(--analytics-card-bg);
+  border: 1px solid var(--analytics-card-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.analytics-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.analytics-kpi-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #145a32;
+  background: var(--quorum-mint);
+}
+
+.analytics-kpi-icon.orange {
+  color: #9a3412;
+  background: #ffedd5;
+}
+
+.analytics-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.analytics-kpi-change {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.analytics-kpi-change.up {
+  color: #15803d;
+}
+
+.analytics-kpi-change.down {
+  color: #dc2626;
+}
+
+.analytics-kpi-change.neutral {
+  color: #6b7280;
+}
+
+.analytics-kpi-sparkline {
+  height: 34px;
+}
+
+.analytics-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-table-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-card {
+  background: var(--analytics-card-bg);
+  border: 1px solid var(--analytics-card-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  padding: 14px;
+}
+
+.analytics-card > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.analytics-card > header h4 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.analytics-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 6px 0 8px;
+}
+
+.analytics-chart-wrap {
+  position: relative;
+  height: 320px;
+  min-height: 320px;
+}
+
+.analytics-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.analytics-events-feed {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.analytics-event-item {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 4px;
+  display: flex;
+  gap: 8px;
+}
+
+.analytics-event-item:last-child {
+  border-bottom: 0;
+}
+
+.analytics-event-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--quorum-mint);
+  color: var(--quorum-dark-green);
+}
+
+.analytics-skeleton-wrap {
+  display: block;
+}
+
+.analytics-skeleton-card {
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%);
+  background-size: 200% 100%;
+  border-radius: 12px;
+  min-height: 96px;
+}
+
+.pulse {
+  animation: pulse-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .analytics-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .analytics-chart-grid,
+  .analytics-table-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-chart-wrap {
+    height: 280px;
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .analytics-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .analytics-range-control,
+  #printAnalyticsButton,
+  .js-chart-download,
+  .sidebar,
+  .mobile-bottom-nav,
+  nav.breadcrumb,
+  footer {
+    display: none !important;
+  }
+
+  .analytics-card {
+    box-shadow: none;
+    border-color: #d1d5db;
+    break-inside: avoid;
+  }
+
+  .analytics-chart-grid,
+  .analytics-table-grid {
+    grid-template-columns: 1fr;
+  }
+}

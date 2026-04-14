@@ -1,16 +1,26 @@
 <div class="project-inner-nav border-bottom mb-4">
+  {% set is_project_creator = project.creator_user_id == current_user.id %}
+  {% set membership = namespace(is_member=false) %}
+  {% for role in project.roles %}
+    {% if role.filled_by_user_id == current_user.id %}
+      {% set membership.is_member = true %}
+    {% endif %}
+  {% endfor %}
+  {% set can_rate_peers = project.status == 'completed' and (is_project_creator or membership.is_member) %}
   <ul class="nav nav-tabs border-0">
-    <li class="nav-item">
-      <a class="nav-link {{ 'active' if active_tab == 'overview' else '' }}" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Overview</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {{ 'active' if active_tab == 'team' else '' }}" href="{{ url_for('manage.manage_team', id=project.id) }}">
-        Team
-        {% if pending_applications_count > 0 %}
-          <span class="badge rounded-pill bg-danger ms-1">{{ pending_applications_count }}</span>
-        {% endif %}
-      </a>
-    </li>
+    {% if is_project_creator %}
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_tab == 'overview' else '' }}" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Overview</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_tab == 'team' else '' }}" href="{{ url_for('manage.manage_team', id=project.id) }}">
+          Team
+          {% if pending_applications_count > 0 %}
+            <span class="badge rounded-pill bg-danger ms-1">{{ pending_applications_count }}</span>
+          {% endif %}
+        </a>
+      </li>
+    {% endif %}
     <li class="nav-item">
       <a class="nav-link {{ 'active' if active_tab == 'tasks' else '' }}" href="{{ url_for('tasks.board', id=project.id) }}">
         Tasks
@@ -22,7 +32,12 @@
     <li class="nav-item">
       <a class="nav-link {{ 'active' if active_tab == 'feed' else '' }}" href="{{ url_for('feed.index', id=project.id) }}">Feed</a>
     </li>
-    {% if project.creator_user_id == current_user.id %}
+    {% if can_rate_peers %}
+      <li class="nav-item">
+        <a class="nav-link {{ 'active' if active_tab == 'ratings' else '' }}" href="{{ url_for('projects_public.project_ratings', id=project.id) }}">Ratings</a>
+      </li>
+    {% endif %}
+    {% if is_project_creator %}
       {% set outcome_locked = project.status != 'completed' and project.end_date and project.end_date > today %}
       <li class="nav-item">
         <a class="nav-link {{ 'active' if active_tab == 'outcome' else '' }} {{ 'disabled' if outcome_locked else '' }}"
@@ -37,14 +52,22 @@
     {% endif %}
   </ul>
 
+  {% set raw_completion = project.completion_pct if project.completion_pct is not none else 0 %}
+  {% set completion_pct = raw_completion|float %}
+  {% if completion_pct < 0 %}
+    {% set completion_pct = 0 %}
+  {% elif completion_pct > 100 %}
+    {% set completion_pct = 100 %}
+  {% endif %}
+
   <div class="d-flex align-items-center gap-3 py-2 small text-muted flex-wrap">
     <span>{{ project.city or 'Remote' }}, {{ project.country or 'Global' }}</span>
     <span>{{ project.timeline_days }} days</span>
-    <span>
-      <div class="progress d-inline-block" style="width: 80px; height: 8px; vertical-align: middle;">
-        <div class="progress-bar" style="width: {{ project.completion_pct }}%; background-color: var(--quorum-mid-green);"></div>
-      </div>
-      {{ project.completion_pct|int }}% complete
+    <span class="d-inline-flex align-items-center gap-2">
+      <span class="progress d-inline-flex project-completion-progress" role="progressbar" aria-label="Project completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ completion_pct|round(0)|int }}" style="--bs-progress-bar-bg: #1e8449; --bs-progress-bar-bg-image: linear-gradient(90deg, #27ae60 0%, #1e8449 100%);">
+        <span class="progress-bar project-completion-progress-bar" style="width: {{ completion_pct }}%; background-color: #1e8449; background-image: linear-gradient(90deg, #27ae60 0%, #1e8449 100%);"></span>
+      </span>
+      {{ completion_pct|round(0)|int }}% complete
     </span>
     <a href="{{ url_for('projects_public.detail', id=project.id) }}" target="_blank" rel="noopener" class="ms-auto text-decoration-none text-muted small">View Public Page</a>
   </div>

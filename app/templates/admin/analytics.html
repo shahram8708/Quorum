@@ -1,25 +1,185 @@
 {% extends 'app_base.html' %}
-{% block title %}Platform Analytics | Admin{% endblock %}
+{% block title %}Platform Analytics | Admin — Quorum{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_analytics.css') }}">
+{% endblock %}
 
 {% block breadcrumbs %}
-  <li class="breadcrumb-item active" aria-current="page">Analytics</li>
+  <li class="breadcrumb-item active" aria-current="page">Platform Analytics</li>
 {% endblock %}
 
 {% block app_content %}
-<h2>Platform Analytics</h2>
+<div id="analyticsApp" data-endpoint="{{ url_for('admin.analytics_data') }}" data-default-range="{{ default_range }}">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h1 class="h3 mb-1">Platform Analytics</h1>
+      <p class="text-muted mb-0">Live platform health, growth, engagement, revenue, and content insights.</p>
+    </div>
+    <button id="printAnalyticsButton" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer me-1"></i>Print / Export</button>
+  </div>
 
-<div class="d-flex flex-wrap gap-2 mb-3 small">
-  <a href="{{ url_for('admin.analytics', range='7d') }}">Last 7 days</a>
-  <a href="{{ url_for('admin.analytics', range='30d') }}">Last 30 days</a>
-  <a href="{{ url_for('admin.analytics', range='90d') }}">Last 90 days</a>
-  <a href="{{ url_for('admin.analytics', export='users_csv', range=range_key) }}">Export users CSV</a>
-  <a href="{{ url_for('admin.analytics', export='projects_csv', range=range_key) }}">Export projects CSV</a>
-</div>
+  <div class="analytics-range-control btn-group mb-4" role="group" aria-label="Date range">
+    <button type="button" class="btn btn-outline-secondary analytics-range-btn" data-range="7d">Last 7 days</button>
+    <button type="button" class="btn btn-outline-secondary analytics-range-btn" data-range="30d">Last 30 days</button>
+    <button type="button" class="btn btn-outline-secondary analytics-range-btn" data-range="90d">Last 90 days</button>
+    <button type="button" class="btn btn-outline-secondary analytics-range-btn" data-range="12m">Last 12 months</button>
+    <button type="button" class="btn btn-outline-secondary analytics-range-btn" data-range="all">All time</button>
+  </div>
 
-<div class="row g-3">
-  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Users</h6><p class="display-6 mb-0">{{ metrics.new_users }}</p></div></div></div>
-  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Projects</h6><p class="display-6 mb-0">{{ metrics.new_projects }}</p></div></div></div>
-  <div class="col-md-3"><div class="card"><div class="card-body"><h6>Completed Projects</h6><p class="display-6 mb-0">{{ metrics.completed_projects }}</p></div></div></div>
-  <div class="col-md-3"><div class="card"><div class="card-body"><h6>New Templates</h6><p class="display-6 mb-0">{{ metrics.new_templates }}</p></div></div></div>
+  <div id="analyticsLoading" class="analytics-skeleton-wrap">
+    <div class="analytics-kpi-grid">
+      {% for _ in range(8) %}
+      <div class="analytics-skeleton-card pulse"></div>
+      {% endfor %}
+    </div>
+    <div class="analytics-chart-grid mt-3">
+      {% for _ in range(6) %}
+      <div class="analytics-skeleton-card pulse" style="height: 360px;"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="analyticsContent" class="d-none">
+    <section class="mb-4">
+      <h3 class="analytics-section-title">KPI Summary</h3>
+      <div id="kpiRow" class="analytics-kpi-grid"></div>
+    </section>
+
+    <section class="mb-4">
+      <h3 class="analytics-section-title">Charts</h3>
+      <div class="analytics-chart-grid">
+        <article class="analytics-card">
+          <header><h4>User Growth Over Time</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartUserGrowth"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Cumulative users and new signups over time.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartUserGrowth"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Project Activity Timeline</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartProjectActivity"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Projects created, launched, and completed.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartProjectActivity"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Project Status Distribution</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartProjectStatus"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Current projects by lifecycle status.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartProjectStatus"></canvas></div>
+          <div class="small text-muted mt-2">Total: <span id="projectStatusTotal">0</span></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Domain Distribution</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartDomainDistribution"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Most active civic domains on the platform.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartDomainDistribution"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Geographic Distribution</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartGeoDistribution"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Top locations by project concentration.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartGeoDistribution"></canvas></div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr><th>Rank</th><th>Country</th><th>City</th><th class="text-end">Projects</th><th class="text-end">Contributors</th><th class="text-end">Completed</th></tr>
+              </thead>
+              <tbody id="geoTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>User Skill Category Distribution</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartSkillDistribution"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Active users mapped to skill category clusters.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartSkillDistribution"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Application Funnel</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartApplicationFunnel"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Role application progression and conversion.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartApplicationFunnel"></canvas></div>
+          <div class="small text-muted mt-2">Conversion Rate: <span id="applicationConversionRate">0%</span></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Task Completion Rate Over Time</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartTaskCompletion"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Completion trend with active project overlay.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartTaskCompletion"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Subscription Revenue Breakdown</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartRevenue"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Monthly stacked revenue by subscription tier.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartRevenue"></canvas></div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Plan</th><th class="text-end">Subscribers</th><th class="text-end">MRR</th></tr></thead>
+              <tbody id="revenueSummaryBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>AI Feature Usage Distribution</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartAiUsage"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Relative value and adoption of AI features.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartAiUsage"></canvas></div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Blog Performance</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartBlogPerformance"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Top content by views and reading-time profile.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartBlogPerformance"></canvas></div>
+          <div class="table-responsive mt-3">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Post Title</th><th>Category</th><th class="text-end">Views</th><th>Published</th><th class="text-end">Reading</th><th>Featured</th></tr></thead>
+              <tbody id="blogTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Weekly Digest Email Engagement</h4><button class="btn btn-sm btn-outline-secondary js-chart-download" data-chart-id="chartDigestEngagement"><i class="bi bi-download"></i></button></header>
+          <p class="analytics-subtitle">Digest sends and open trends by week.</p>
+          <div class="analytics-chart-wrap"><canvas id="chartDigestEngagement"></canvas></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <h3 class="analytics-section-title">Supporting Tables</h3>
+      <div class="analytics-table-grid">
+        <article class="analytics-card">
+          <header><h4>Top Active Contributors</h4></header>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Rank</th><th>Contributor</th><th class="text-end">Completed</th><th class="text-end">Rating</th><th class="text-end">Skills</th><th>Account Created</th><th>Last Login</th></tr></thead>
+              <tbody id="contributorsTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="analytics-card">
+          <header><h4>Most Active Projects</h4></header>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Project</th><th>Domain</th><th>Status</th><th>Creator</th><th class="text-end">Team</th><th class="text-end">Tasks</th><th>Milestone</th><th>Started</th></tr></thead>
+              <tbody id="projectsTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+
+      <article class="analytics-card mt-3">
+        <header><h4>Recent Platform Events</h4></header>
+        <div id="eventsFeed" class="analytics-events-feed"></div>
+      </article>
+    </section>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin_analytics.js') }}"></script>
 {% endblock %}

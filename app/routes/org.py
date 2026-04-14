@@ -1,6 +1,6 @@
 import logging
 import traceback
-from datetime import date
+from datetime import date, timedelta
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -18,12 +18,31 @@ org_bp = Blueprint("org", __name__, url_prefix="/org")
 logger = logging.getLogger("quorum.routes")
 
 
-def _require_org_account():
-    org = OrganizationAccount.query.filter_by(owner_user_id=current_user.id).first()
+def _org_profile_complete(org: OrganizationAccount | None) -> bool:
     if not org:
-        flash("Please complete your organization setup.", "warning")
+        return False
+
+    required_values = [org.org_name, org.org_type, org.org_domain, org.mission_description]
+    return all(bool((value or "").strip()) for value in required_values)
+
+
+def _require_org_account():
+    if current_user.account_type != "organization":
+        flash("Organization tools are available for organization accounts only.", "warning")
         return None
+
+    org = OrganizationAccount.query.filter_by(owner_user_id=current_user.id).first()
+    if not _org_profile_complete(org):
+        flash("Please complete your organization profile before using organization tools.", "warning")
+        return None
+
     return org
+
+
+def _redirect_for_org_setup():
+    if current_user.account_type != "organization":
+        return redirect(url_for("dashboard.home"))
+    return redirect(url_for("settings.organization", next=request.path))
 
 
 @org_bp.get("/dashboard")
@@ -31,7 +50,7 @@ def _require_org_account():
 def dashboard():
     org = _require_org_account()
     if not org:
-        return redirect(url_for("settings.account"))
+        return _redirect_for_org_setup()
 
     projects_supported = Project.query.filter_by(org_support_id=org.id).all()
     challenges = CivicChallenge.query.filter_by(org_id=org.id).order_by(CivicChallenge.created_at.desc()).all()
@@ -52,7 +71,7 @@ def dashboard():
 def discover():
     org = _require_org_account()
     if not org:
-        return redirect(url_for("settings.account"))
+        return _redirect_for_org_setup()
 
     filters = {
         "domain": request.args.get("domain"),
@@ -124,28 +143,93 @@ def ai_challenges():
 def post_challenge():
     org = _require_org_account()
     if not org:
-        return redirect(url_for("settings.account"))
+        return _redirect_for_org_setup()
+
+    suggested_timeline_days = request.args.get("suggested_timeline_days", type=int)
+    if suggested_timeline_days not in {30, 60, 90}:
+        suggested_timeline_days = None
+
+    prefill_deadline = strip_html(request.args.get("deadline", ""), 40).strip()
+    if prefill_deadline:
+        try:
+            prefill_deadline = date.fromisoformat(prefill_deadline).isoformat()
+        except ValueError:
+            prefill_deadline = ""
+    elif suggested_timeline_days:
+        prefill_deadline = (date.today() + timedelta(days=suggested_timeline_days)).isoformat()
+
+    query_prefill = {
+        "title": strip_html(request.args.get("title", ""), 500),
+        "description": strip_html(request.args.get("description", ""), 3000),
+        "domain": strip_html(request.args.get("domain", org.org_domain or "community"), 100) or "community",
+        "geographic_scope": strip_html(request.args.get("geographic_scope", "India"), 200) or "India",
+        "grant_amount_inr": strip_html(request.args.get("grant_amount_inr", ""), 30).strip(),
+        "deadline": prefill_deadline,
+    }
+
+    prefill_meta = {
+        "from_ai": bool(query_prefill["title"] or query_prefill["description"]),
+        "difficulty": strip_html(request.args.get("difficulty", ""), 50),
+        "estimated_team_size": request.args.get("estimated_team_size", type=int),
+        "suggested_timeline_days": suggested_timeline_days,
+    }
 
     if request.method == "POST":
         if org.monthly_challenge_credits <= 0:
             flash("No challenge credits remaining this month.", "warning")
             return redirect(url_for("org.dashboard"))
 
+        form_data = {
+            "title": strip_html(request.form.get("title", ""), 500),
+            "description": strip_html(request.form.get("description", ""), 3000),
+            "domain": strip_html(request.form.get("domain", "community"), 100),
+            "geographic_scope": strip_html(request.form.get("geographic_scope", "India"), 200),
+            "grant_amount_inr": strip_html(request.form.get("grant_amount_inr", ""), 30).strip(),
+            "deadline": strip_html(request.form.get("deadline", ""), 40).strip(),
+        }
+
+        try:
+            grant_amount_inr = int(form_data["grant_amount_inr"] or 0)
+        except ValueError:
+            flash("Grant amount must be a valid number.", "danger")
+            return render_template(
+                "org/post_challenge.html",
+                org=org,
+                form_data=form_data,
+                prefill_meta={"from_ai": False},
+            )
+
+        try:
+            parsed_deadline = date.fromisoformat(form_data["deadline"]) if form_data["deadline"] else None
+        except ValueError:
+            flash("Please provide a valid deadline date.", "danger")
+            return render_template(
+                "org/post_challenge.html",
+                org=org,
+                form_data=form_data,
+                prefill_meta={"from_ai": False},
+            )
+
         challenge = CivicChallenge(
             org_id=org.id,
-            title=strip_html(request.form.get("title", ""), 500),
-            description=strip_html(request.form.get("description", ""), 3000),
-            domain=strip_html(request.form.get("domain", "community"), 100),
-            geographic_scope=strip_html(request.form.get("geographic_scope", "India"), 200),
-            grant_amount_inr=int(request.form.get("grant_amount_inr", 0) or 0),
-            deadline=request.form.get("deadline", type=lambda value: date.fromisoformat(value) if value else None),
+            title=form_data["title"],
+            description=form_data["description"],
+            domain=form_data["domain"],
+            geographic_scope=form_data["geographic_scope"],
+            grant_amount_inr=grant_amount_inr,
+            deadline=parsed_deadline,
             status="open",
             created_at=utcnow(),
         )
 
         if not challenge.title or not challenge.description or not challenge.deadline:
             flash("Please fill in all required challenge fields.", "danger")
-            return render_template("org/post_challenge.html", org=org)
+            return render_template(
+                "org/post_challenge.html",
+                org=org,
+                form_data=form_data,
+                prefill_meta={"from_ai": False},
+            )
 
         db.session.add(challenge)
         org.monthly_challenge_credits -= 1
@@ -165,7 +249,7 @@ def post_challenge():
         flash("Challenge posted! Contributors will be notified.", "success")
         return redirect(url_for("org.dashboard"))
 
-    return render_template("org/post_challenge.html", org=org)
+    return render_template("org/post_challenge.html", org=org, form_data=query_prefill, prefill_meta=prefill_meta)
 
 
 @org_bp.post("/message/<int:project_id>")
@@ -194,7 +278,7 @@ def offer_support(project_id):
     project = Project.query.get_or_404(project_id)
     org = _require_org_account()
     if not org:
-        return redirect(url_for("settings.account"))
+        return _redirect_for_org_setup()
 
     if request.method == "POST":
         project.org_support_id = org.id

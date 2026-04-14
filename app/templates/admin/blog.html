@@ -1,23 +1,200 @@
 {% extends 'app_base.html' %}
-{% block title %}Blog Management | Admin{% endblock %}
+{% block title %}Blog Management | Admin — Quorum{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_blog.css') }}">
+{% endblock %}
 
 {% block breadcrumbs %}
   <li class="breadcrumb-item active" aria-current="page">Blog Management</li>
 {% endblock %}
 
 {% block app_content %}
-<h2>Blog Management</h2>
+<div class="admin-blog-page">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1">Blog Management</h1>
+      <div class="text-muted small">Manage drafts, publishing, and content visibility for Quorum's public blog.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.blog_categories') }}" class="btn btn-outline-secondary">Categories</a>
+      <a href="{{ url_for('admin.blog_tags') }}" class="btn btn-outline-secondary">Tags</a>
+      <a href="{{ url_for('admin.blog_new') }}" class="btn btn-quorum-orange">New Post</a>
+    </div>
+  </div>
 
-<div class="card">
-  <div class="card-body">
-    {% for post in posts %}
-      <div class="border-bottom py-2">
-        <strong>{{ post.title }}</strong>
-        <div class="small text-muted">{{ post.slug }}</div>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <span class="badge rounded-pill text-bg-success">Published {{ status_counts.get('published', 0) }}</span>
+    <span class="badge rounded-pill text-bg-warning">Draft {{ status_counts.get('draft', 0) }}</span>
+    <span class="badge rounded-pill text-bg-secondary">Archived {{ status_counts.get('archived', 0) }}</span>
+  </div>
+
+  <form method="get" class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label small text-muted">Search by title or tag</label>
+          <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Search posts...">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small text-muted">Category</label>
+          <select class="form-select" name="category">
+            <option value="">All categories</option>
+            {% for key, label in category_labels.items() %}
+            <option value="{{ key }}" {% if category_filter == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small text-muted">Status</label>
+          <select class="form-select" name="status">
+            <option value="">All statuses</option>
+            {% for key, label in status_labels.items() %}
+            <option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small text-muted">Sort by</label>
+          <select class="form-select" name="sort">
+            <option value="newest" {% if sort_key == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="most_viewed" {% if sort_key == 'most_viewed' %}selected{% endif %}>Most viewed</option>
+            <option value="recently_updated" {% if sort_key == 'recently_updated' %}selected{% endif %}>Recently updated</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button class="btn btn-outline-secondary" type="submit">Apply</button>
+        </div>
       </div>
-    {% else %}
-      <p class="text-muted mb-0">No blog posts found.</p>
-    {% endfor %}
+    </div>
+  </form>
+
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0 admin-blog-table">
+        <thead>
+          <tr>
+            <th>Post</th>
+            <th>Category</th>
+            <th>Author</th>
+            <th>Status</th>
+            <th class="text-center">Flags</th>
+            <th class="text-end">Views</th>
+            <th>Published</th>
+            <th>Updated</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in pagination.items %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-start gap-2">
+                {% if post.cover_image_url %}
+                <img src="{{ resolve_file_url(post.cover_image_url) }}" alt="{{ post.cover_image_alt or post.title }}" class="admin-blog-thumb">
+                {% else %}
+                <div class="admin-blog-thumb admin-blog-thumb-placeholder"><i class="bi bi-image"></i></div>
+                {% endif %}
+                <div>
+                  <a href="{{ url_for('admin.blog_edit', id=post.id) }}" class="fw-semibold text-dark text-decoration-none">{{ post.title }}</a>
+                  <div class="small text-muted">/{{ post.slug }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge text-bg-light border">{{ category_labels.get(post.category, post.category|replace('_', ' ')|title) }}</span>
+            </td>
+            <td>{{ post.author.full_name if post.author else 'Unknown' }}</td>
+            <td>
+              {% if post.status == 'published' %}
+              <span class="badge text-bg-success">Published</span>
+              {% elif post.status == 'draft' %}
+              <span class="badge text-bg-warning">Draft</span>
+              {% else %}
+              <span class="badge text-bg-secondary">Archived</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <button
+                class="btn btn-sm btn-icon-toggle js-toggle-featured {% if post.is_featured %}is-active{% endif %}"
+                type="button"
+                data-url="{{ url_for('admin.blog_toggle_featured', id=post.id) }}"
+                title="Toggle featured"
+              >
+                <i class="bi bi-star{% if post.is_featured %}-fill{% endif %}"></i>
+              </button>
+              <button
+                class="btn btn-sm btn-icon-toggle js-toggle-pinned {% if post.is_pinned %}is-active{% endif %}"
+                type="button"
+                data-url="{{ url_for('admin.blog_toggle_pinned', id=post.id) }}"
+                title="Toggle pinned"
+              >
+                <i class="bi bi-pin-angle{% if post.is_pinned %}-fill{% endif %}"></i>
+              </button>
+            </td>
+            <td class="text-end">{{ post.views_count }}</td>
+            <td>{{ post.published_at.strftime('%d %b %Y') if post.published_at else '-' }}</td>
+            <td>{{ post.updated_at.strftime('%d %b %Y %H:%M') if post.updated_at else '-' }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ url_for('admin.blog_edit', id=post.id) }}" class="btn btn-outline-secondary">Edit</a>
+                <a href="{{ url_for('admin.blog_preview', id=post.id) }}" class="btn btn-outline-secondary" target="_blank" rel="noopener">Preview</a>
+                <button type="button" class="btn btn-outline-secondary js-duplicate-post" data-url="{{ url_for('admin.blog_duplicate', id=post.id) }}">Duplicate</button>
+                <form method="post" action="{{ url_for('admin.blog_archive', id=post.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline-secondary">Archive</button>
+                </form>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger js-delete-post"
+                  data-delete-url="{{ url_for('admin.blog_delete', id=post.id) }}"
+                  data-post-title="{{ post.title }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deletePostModal"
+                >Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="text-center text-muted py-4">No posts found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% include 'components/pagination.html' %}
+</div>
+
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="deletePostForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Post</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <p class="mb-2">Are you sure you want to delete <strong id="deletePostTitle"></strong>?</p>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="1" name="hard_delete" id="hardDeleteInput">
+            <label class="form-check-label" for="hardDeleteInput">Permanently delete (cannot be undone)</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Confirm Delete</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_blog.js') }}"></script>
 {% endblock %}

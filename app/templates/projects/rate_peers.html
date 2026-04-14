@@ -38,6 +38,9 @@
     {% endfor %}
     <button class="btn btn-primary" type="submit">Submit Ratings</button>
   </form>
-  <a class="small d-inline-block mt-3" href="{{ url_for('projects_public.detail', id=project.id) }}">Back to Project</a>
+  <div class="d-flex gap-3 flex-wrap align-items-center mt-3">
+    <a class="small" href="{{ url_for('projects_public.detail', id=project.id) }}">Back to Project</a>
+    <a class="small" href="{{ url_for('projects_public.project_ratings', id=project.id) }}">View submitted ratings</a>
+  </div>
 </div>
 {% endblock %}

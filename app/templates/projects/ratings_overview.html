@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Project Ratings | Quorum{% endblock %}
+{% block content %}
+<div class="container py-5 mt-5" style="max-width:1100px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('dashboard.home') }}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('projects_public.detail', id=project.id) }}">{{ project.title }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Ratings</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+      <h1 class="mb-1">Ratings Overview</h1>
+      <p class="text-muted mb-0">Project: {{ project.title }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if pending_targets %}
+        <a class="btn btn-success" href="{{ url_for('projects_public.rate_peers', id=project.id) }}">Complete My Ratings ({{ pending_targets|length }} left)</a>
+      {% elif expected_targets %}
+        <a class="btn btn-outline-success" href="{{ url_for('projects_public.rate_peers', id=project.id) }}">Update Rating Page</a>
+      {% endif %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('projects_public.detail', id=project.id) }}">Back to Project</a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="small text-muted mb-2">My submission status</div>
+      {% if expected_targets %}
+        <div class="small">
+          You have rated {{ expected_targets|length - pending_targets|length }}/{{ expected_targets|length }} teammates.
+        </div>
+      {% else %}
+        <div class="small">No eligible teammates found for this project.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Team Summary (who received what)</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Teammate</th>
+              <th>Ratings Received</th>
+              <th>Follow Through</th>
+              <th>Collaboration</th>
+              <th>Quality</th>
+              <th>Overall</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in summary_rows %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('profile.public_profile', username=row.user.username) }}">{{ row.user.full_name }}</a>
+                </td>
+                <td>{{ row.rating_count }}</td>
+                <td>{{ row.avg_follow_through if row.avg_follow_through is not none else 'N/A' }}</td>
+                <td>{{ row.avg_collaboration if row.avg_collaboration is not none else 'N/A' }}</td>
+                <td>{{ row.avg_quality if row.avg_quality is not none else 'N/A' }}</td>
+                <td>
+                  {% if row.avg_overall is not none %}
+                    <strong>{{ row.avg_overall }}/5</strong>
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6" class="text-muted">No ratings submitted yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5 class="mb-3">Detailed Ratings (who rated whom)</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Rater</th>
+              <th>Rated Teammate</th>
+              <th>Follow Through</th>
+              <th>Collaboration</th>
+              <th>Quality</th>
+              <th>Average</th>
+              <th>Testimonial</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rating in ratings %}
+              {% set rating_avg = ((rating.follow_through + rating.collaboration + rating.quality) / 3)|round(2) %}
+              <tr>
+                <td>
+                  {% if rating.rater %}
+                    <a href="{{ url_for('profile.public_profile', username=rating.rater.username) }}">{{ rating.rater.full_name }}</a>
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>
+                  {% if rating.rated %}
+                    <a href="{{ url_for('profile.public_profile', username=rating.rated.username) }}">{{ rating.rated.full_name }}</a>
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>{{ rating.follow_through }}</td>
+                <td>{{ rating.collaboration }}</td>
+                <td>{{ rating.quality }}</td>
+                <td>{{ rating_avg }}/5</td>
+                <td>
+                  {% if rating.testimonial %}
+                    {{ rating.testimonial }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>{{ rating.created_at.strftime('%Y-%m-%d') }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="8" class="text-muted">No ratings submitted yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

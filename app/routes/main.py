@@ -1,6 +1,12 @@
-from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, url_for
-from flask_login import login_required
+import mimetypes
+from datetime import timezone
 
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
+from flask_login import login_required
+from itsdangerous import BadSignature, URLSafeTimedSerializer
+from sqlalchemy import cast, or_
+
+from app.extensions import db
 from app.models import ActionTemplate, Project
 from app.services.geo_matcher import get_nearby_projects
 from app.services.file_handler import (
@@ -8,32 +14,55 @@ from app.services.file_handler import (
     decode_local_download_token,
     get_local_file_absolute_path,
 )
-from app.utils import strip_html
+from app.utils import strip_html, utcnow
 
 
 main_bp = Blueprint("main", __name__)
 
+from app.models import BLOG_CATEGORIES, BlogPost
 
-BLOG_POSTS = [
-    {
-        "slug": "why-small-civic-teams-win",
-        "title": "Why Small Civic Teams Win",
-        "excerpt": "Focused teams with clear milestones often outperform large, unstructured volunteer groups.",
-        "content": "<p>Small teams can execute faster when roles are explicit and accountability is clear.</p>",
-    },
-    {
-        "slug": "from-intent-to-impact",
-        "title": "From Intent to Impact",
-        "excerpt": "Turning civic concern into outcomes requires measurable definitions of success.",
-        "content": "<p>Impact starts by defining outcomes, owners, and delivery cadence from day one.</p>",
-    },
-    {
-        "slug": "templates-scale-community-action",
-        "title": "How Templates Scale Community Action",
-        "excerpt": "Reusable action templates preserve what worked and accelerate future projects.",
-        "content": "<p>When communities replicate proven structures, they reduce setup time and risk.</p>",
-    },
-]
+
+BLOG_CATEGORY_LABELS = {
+    "civic_action": "Civic Action",
+    "platform_updates": "Platform Updates",
+    "success_stories": "Success Stories",
+    "guides_and_tips": "Guides and Tips",
+    "organizations": "Organizations",
+    "announcements": "Announcements",
+}
+
+
+def _preview_serializer() -> URLSafeTimedSerializer:
+    from flask import current_app
+
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+
+
+def _valid_preview_token(post_id: int, token: str, max_age_seconds: int = 86400) -> bool:
+    if not token:
+        return False
+    try:
+        payload = _preview_serializer().loads(token, salt="blog-preview", max_age=max_age_seconds)
+    except BadSignature:
+        return False
+    return int(payload.get("post_id", -1)) == int(post_id)
+
+
+def _coerce_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _published_blog_query():
+    now = utcnow()
+    return BlogPost.query.filter(
+        BlogPost.deleted_at.is_(None),
+        BlogPost.status == "published",
+        or_(BlogPost.published_at.is_(None), BlogPost.published_at <= now),
+    )
 
 
 @main_bp.get("/")
@@ -93,15 +122,94 @@ def about():
 
 @main_bp.get("/blog")
 def blog_index():
-    return render_template("main/blog_index.html", posts=BLOG_POSTS)
+    q = strip_html(request.args.get("q", ""), 120).strip()
+    category = strip_html(request.args.get("category", ""), 100).strip().lower()
+    tag = strip_html(request.args.get("tag", ""), 40).strip().lower()
+
+    query = _published_blog_query().order_by(
+        BlogPost.is_pinned.desc(),
+        BlogPost.is_featured.desc(),
+        BlogPost.published_at.desc(),
+        BlogPost.created_at.desc(),
+    )
+
+    if q:
+        like_q = f"%{q}%"
+        query = query.filter(
+            or_(
+                BlogPost.title.ilike(like_q),
+                BlogPost.summary.ilike(like_q),
+                cast(BlogPost.tags, db.String).ilike(like_q),
+            )
+        )
+
+    if category in BLOG_CATEGORIES:
+        query = query.filter(BlogPost.category == category)
+
+    if tag:
+        query = query.filter(cast(BlogPost.tags, db.String).ilike(f'%"{tag}"%'))
+
+    page = max(1, request.args.get("page", 1, type=int))
+    pagination = query.paginate(page=page, per_page=12, error_out=False)
+
+    featured_posts = (
+        _published_blog_query()
+        .filter(BlogPost.is_featured.is_(True))
+        .order_by(BlogPost.is_pinned.desc(), BlogPost.published_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    return render_template(
+        "main/blog_index.html",
+        pagination=pagination,
+        featured_posts=featured_posts,
+        q=q,
+        category=category,
+        tag=tag,
+        category_labels=BLOG_CATEGORY_LABELS,
+    )
 
 
 @main_bp.get("/blog/<slug>")
 def blog_post(slug):
-    post = next((post for post in BLOG_POSTS if post["slug"] == slug), None)
+    post = BlogPost.query.filter(BlogPost.deleted_at.is_(None), BlogPost.slug == slug).first()
     if not post:
         return render_template("errors/404.html"), 404
-    return render_template("main/blog_post.html", post=post)
+
+    preview_token = (request.args.get("preview_token") or "").strip()
+    preview_mode = _valid_preview_token(post.id, preview_token)
+
+    published_at_utc = _coerce_utc(post.published_at)
+    is_publicly_visible = (
+        post.status == "published"
+        and (published_at_utc is None or published_at_utc <= utcnow())
+    )
+
+    if not preview_mode and not is_publicly_visible:
+        return render_template("errors/404.html"), 404
+
+    related_posts = (
+        _published_blog_query()
+        .filter(BlogPost.id != post.id)
+        .filter(BlogPost.category == post.category)
+        .order_by(BlogPost.published_at.desc())
+        .limit(3)
+        .all()
+    )
+
+    return render_template("main/blog_post.html", post=post, related_posts=related_posts, preview_mode=preview_mode)
+
+
+@main_bp.post("/blog/<slug>/track-view")
+def blog_track_view(slug):
+    post = _published_blog_query().filter(BlogPost.slug == slug).first()
+    if not post:
+        return jsonify({"success": False}), 404
+
+    post.views_count = int(post.views_count or 0) + 1
+    db.session.commit()
+    return jsonify({"success": True, "views_count": post.views_count})
 
 
 @main_bp.get("/contact")
@@ -145,4 +253,12 @@ def local_file_download(token):
     if not absolute_file.exists() or not absolute_file.is_file():
         abort(404)
 
-    return send_file(absolute_file, as_attachment=True, download_name=absolute_file.name)
+    mime_type, _encoding = mimetypes.guess_type(absolute_file.name)
+    is_image = bool(mime_type and mime_type.startswith("image/"))
+
+    return send_file(
+        absolute_file,
+        mimetype=mime_type,
+        as_attachment=not is_image,
+        download_name=absolute_file.name,
+    )

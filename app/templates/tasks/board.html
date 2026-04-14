@@ -15,6 +15,7 @@
 
 {% include 'components/project_inner_nav.html' %}
 
+{% if can_create_tasks %}
 <div class="card p-3 mb-3">
   <form id="taskCreateForm" method="post" action="{{ url_for('tasks.create_task', id=project.id) }}">
     {{ create_form.hidden_tag() }}
@@ -27,7 +28,9 @@
     </div>
   </form>
 </div>
+{% endif %}
 
+{% if can_filter_by_assignee %}
 <div class="d-flex flex-wrap gap-2 mb-3 small">
   <strong>Filter by assignee:</strong>
   <a href="{{ url_for('tasks.board', id=project.id) }}">All</a>
@@ -35,6 +38,9 @@
     <a href="{{ url_for('tasks.board', id=project.id, assignee=member.id) }}">{{ member.first_name }}</a>
   {% endfor %}
 </div>
+{% else %}
+<p class="small text-muted mb-3">Showing only tasks assigned to you.</p>
+{% endif %}
 
 {% if milestones %}
   <div class="d-flex flex-wrap gap-2 mb-3 small">
@@ -76,59 +82,6 @@
 <a class="small d-inline-block mt-3" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Back to Project Overview</a>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/task_board.js') }}"></script>
-{% endblock %}
-{% extends 'app_base.html' %}
-{% block title %}Task Board | Quorum{% endblock %}
-{% block head_extra %}
-<link href="{{ url_for('static', filename='css/tasks.css') }}" rel="stylesheet">
-{% endblock %}
-{% block app_content %}
-<h2>Task Board: {{ project.title }}</h2>
-
-{% if can_create_tasks %}
-<div class="card p-3 mb-3">
-  <form id="taskCreateForm" method="post" action="{{ url_for('tasks.create_task', id=project.id) }}">
-    {{ create_form.hidden_tag() }}
-    <div class="row g-2">
-      <div class="col-md-3">{{ create_form.title(class='form-control', placeholder='Task title') }}</div>
-      <div class="col-md-3">{{ create_form.description(class='form-control', placeholder='Description') }}</div>
-      <div class="col-md-2">{{ create_form.priority(class='form-select') }}</div>
-      <div class="col-md-2">{{ create_form.assigned_to_user_id(class='form-select') }}</div>
-      <div class="col-md-2"><button class="btn btn-primary w-100">Add Task</button></div>
-    </div>
-  </form>
-</div>
-{% endif %}
-
-<div id="taskBoard" class="row g-3" data-project-id="{{ project.id }}" data-board='{{ board_data|tojson }}'>
-  <div class="col-lg-4">
-    <div class="kanban-column" data-status="todo">
-      <h5>To Do <span class="badge text-bg-light" data-count="todo">{{ board_data.todo|length }}</span></h5>
-      <div class="task-list" id="todoList">
-        {% for task in tasks if task.status == 'todo' %}{% include 'components/task_card.html' %}{% endfor %}
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="kanban-column" data-status="in_progress">
-      <h5>In Progress <span class="badge text-bg-light" data-count="in_progress">{{ board_data.in_progress|length }}</span></h5>
-      <div class="task-list" id="inProgressList">
-        {% for task in tasks if task.status == 'in_progress' %}{% include 'components/task_card.html' %}{% endfor %}
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="kanban-column" data-status="done">
-      <h5>Done <span class="badge text-bg-light" data-count="done">{{ board_data.done|length }}</span></h5>
-      <div class="task-list" id="doneList">
-        {% for task in tasks if task.status == 'done' %}{% include 'components/task_card.html' %}{% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %}
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/task_board.js') }}"></script>
 {% endblock %}

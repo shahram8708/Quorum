@@ -1,5 +1,10 @@
 <div class="border-bottom mb-4">
   <ul class="nav nav-tabs border-0">
+    {% if current_user.account_type == 'organization' %}
+    <li class="nav-item">
+      <a class="nav-link {{ 'active' if active_settings_tab == 'organization' else '' }}" href="{{ url_for('settings.organization') }}">Organization</a>
+    </li>
+    {% endif %}
     <li class="nav-item">
       <a class="nav-link {{ 'active' if active_settings_tab == 'account' else '' }}" href="{{ url_for('settings.account') }}">Account</a>
     </li>

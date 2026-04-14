@@ -11,6 +11,52 @@ const QuorumAI = (() => {
     setTimeout(() => wrapper.remove(), 3500);
   }
 
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function sanitizeText(value, maxLength) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+  }
+
+  function buildChallengeCreateUrl(baseUrl, challenge, domain, geography) {
+    const challengeTitle = sanitizeText(challenge?.title, 500);
+    const challengeDescription = sanitizeText(challenge?.description, 2200);
+    const challengeRationale = sanitizeText(challenge?.rationale, 700);
+    const descriptionWithContext = [
+      challengeDescription,
+      challengeRationale ? `Why this matters: ${challengeRationale}` : '',
+    ].filter(Boolean).join('\n\n').slice(0, 3000);
+
+    const params = new URLSearchParams();
+    params.set('title', challengeTitle);
+    params.set('description', descriptionWithContext);
+    params.set('domain', sanitizeText(domain || 'community', 100) || 'community');
+    params.set('geographic_scope', sanitizeText(geography || 'India', 200) || 'India');
+
+    const timeline = Number(challenge?.suggested_timeline_days);
+    if ([30, 60, 90].includes(timeline)) {
+      params.set('suggested_timeline_days', String(timeline));
+    }
+
+    const difficulty = sanitizeText(challenge?.difficulty, 32).toLowerCase();
+    if (difficulty) {
+      params.set('difficulty', difficulty);
+    }
+
+    const teamSize = Number(challenge?.estimated_team_size);
+    if (Number.isInteger(teamSize) && teamSize >= 3 && teamSize <= 12) {
+      params.set('estimated_team_size', String(teamSize));
+    }
+
+    return `${baseUrl}?${params.toString()}`;
+  }
+
   async function callAI(endpoint, payload, targetElement, onSuccess) {
     try {
       const res = await fetch(endpoint, {
@@ -51,7 +97,7 @@ const QuorumAI = (() => {
         debounce(endpoint + action, () => {
           const payload = buildPayload(action, targetEl);
           callAI(endpoint, payload, targetEl, (data, element) => {
-            renderAIResult(action, data, element);
+            renderAIResult(action, data, element, btn);
             btn.disabled = false;
             btn.textContent = originalText;
           });
@@ -96,7 +142,7 @@ const QuorumAI = (() => {
     return {};
   }
 
-  function renderAIResult(action, data, targetEl) {
+  function renderAIResult(action, data, targetEl, triggerButton = null) {
     if (action === 'enhance_description') {
       const box = document.querySelector('#ai-result-enhance');
       box.classList.remove('d-none');
@@ -160,8 +206,32 @@ const QuorumAI = (() => {
     if (action === 'org_challenges') {
       const box = document.querySelector('#ai-result-org-challenges');
       box.classList.remove('d-none');
+
+      const challengeCreateUrl = triggerButton?.dataset.aiCreateUrl || '/org/challenges/post';
+      const selectedGeography = document.querySelector('input[name="geographic_scope"]')?.value || 'India';
+      const selectedDomain = document.querySelector('input[name="domain"]')?.value || 'community';
+
       const content = (data.challenges || [])
-        .map((challenge) => `<div class="border rounded p-2 mb-2"><strong>${challenge.title}</strong><p class="small mb-1">${challenge.description}</p><div class="small text-muted">${challenge.rationale}</div></div>`)
+        .map((challenge) => {
+          const createUrl = buildChallengeCreateUrl(challengeCreateUrl, challenge, selectedDomain, selectedGeography);
+          const difficulty = escapeHtml(challenge.difficulty || 'intermediate');
+          const timeline = Number(challenge.suggested_timeline_days) || 60;
+          const teamSize = Number(challenge.estimated_team_size) || 6;
+
+          return `
+            <div class="border rounded p-3 mb-2 bg-white">
+              <strong>${escapeHtml(challenge.title)}</strong>
+              <p class="small mb-1 mt-2">${escapeHtml(challenge.description)}</p>
+              <div class="small text-muted mb-2">${escapeHtml(challenge.rationale)}</div>
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <span class="badge text-bg-light border">${difficulty}</span>
+                <span class="badge text-bg-light border">${timeline} days</span>
+                <span class="badge text-bg-light border">${teamSize} people</span>
+              </div>
+              <a class="btn btn-sm btn-primary" href="${escapeHtml(createUrl)}">Create Challenge</a>
+            </div>
+          `;
+        })
         .join('');
       box.innerHTML = content || 'No challenge insights currently available.';
     }

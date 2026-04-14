@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from app.extensions import db
 from app.models import PeerRating, Project, ProjectRole, User
+from sqlalchemy import or_
 
 
 def recompute_reputation(user_id: int):
@@ -39,22 +40,34 @@ def recompute_reputation(user_id: int):
     return final_score
 
 
+def get_completed_projects_for_user(user_id: int):
+    return (
+        Project.query.outerjoin(ProjectRole, ProjectRole.project_id == Project.id)
+        .filter(
+            Project.status == "completed",
+            or_(Project.creator_user_id == user_id, ProjectRole.filled_by_user_id == user_id),
+        )
+        .order_by(Project.updated_at.desc())
+        .distinct()
+        .all()
+    )
+
+
 def update_badge_counts(user_id: int):
     user = User.query.get(user_id)
     if not user:
         return {}
 
-    completed_projects = (
-        Project.query.join(ProjectRole, ProjectRole.project_id == Project.id)
-        .filter(ProjectRole.filled_by_user_id == user_id, Project.status == "completed")
-        .all()
-    )
+    completed_projects = get_completed_projects_for_user(user_id)
 
     user.projects_completed = len(completed_projects)
 
     domain_counter = {}
     for project in completed_projects:
-        domain_counter[project.domain] = domain_counter.get(project.domain, 0) + 1
+        domain = (project.domain or "").strip()
+        if not domain:
+            continue
+        domain_counter[domain] = domain_counter.get(domain, 0) + 1
 
     badges = {
         "first_project": user.projects_completed >= 1,

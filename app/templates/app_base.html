@@ -74,6 +74,7 @@
 
         <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Account</div>
         <a href="{{ url_for('profile.public_profile', username=current_user.username) }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path == url_for('profile.public_profile', username=current_user.username) else '' }}">My Profile</a>
+        <a href="{{ url_for('settings.organization') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.organization' else '' }}">Organization Profile</a>
         <a href="{{ url_for('settings.account') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.account' else '' }}">Account Settings</a>
         <a href="{{ url_for('settings.billing') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'settings.billing' else '' }}">Billing</a>
 

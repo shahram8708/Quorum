@@ -10,6 +10,12 @@
 {% include 'components/settings_tabs.html' %}
 
 <h2>Account Settings</h2>
+{% if current_user.account_type == 'organization' %}
+<div class="alert alert-info mt-3" style="max-width:720px;">
+  Manage your organization profile details from
+  <a href="{{ url_for('settings.organization') }}" class="alert-link">Organization Settings</a>.
+</div>
+{% endif %}
 <form method="post" class="card p-4 mt-3" style="max-width:720px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-3"><label class="form-label">Email</label><input class="form-control" name="email" value="{{ current_user.email }}"></div>

@@ -14,18 +14,22 @@
     <div class="card mb-4">
       <div class="card-body">
         <h5>My Active Projects</h5>
-        <div class="row g-2">
-          <div class="row g-2 dashboard-active-projects-grid">
-          <div class="col-md-6">{% include 'components/project_card.html' %}</div>
+        <div class="row g-2 dashboard-active-projects-grid">
+          {% for project in creator_projects[:3] %}
+          <div class="col-md-6">
+            {% include 'components/project_card.html' %}
+            <a class="small dashboard-card-manage-link" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Manage Project</a>
+          </div>
           {% else %}
-          <p class="text-muted">No creator projects yet.</p>
-                <a class="small dashboard-card-manage-link" href="{{ url_for('manage.manage_dashboard', id=project.id) }}">Manage Project</a>
+          <div class="col-12"><p class="text-muted mb-0">No creator projects yet.</p></div>
+          {% endfor %}
         </div>
+        <a class="small dashboard-section-footer-link" href="{{ url_for('manage.my_projects') }}">See all my projects</a>
       </div>
     </div>
 
     <div class="card mb-4">
-          <a class="small dashboard-section-footer-link" href="{{ url_for('manage.my_projects') }}">See all my projects</a>
+      <div class="card-body">
         <h5>Projects I Contribute To</h5>
         <div class="row g-2">
           {% for project in member_projects[:3] %}

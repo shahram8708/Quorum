@@ -1,0 +1,216 @@
+.admin-blog-page .card,
+.admin-blog-editor-page .card {
+  border-color: var(--quorum-border);
+}
+
+.admin-blog-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.admin-blog-thumb {
+  width: 64px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f5f9;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-blog-thumb-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.btn-icon-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #d1d5db;
+  color: #64748b;
+  margin-right: 4px;
+}
+
+.btn-icon-toggle:hover,
+.btn-icon-toggle.is-active {
+  border-color: var(--quorum-mid-green);
+  color: var(--quorum-dark-green);
+  background: var(--quorum-mint);
+}
+
+.btn-quorum-orange {
+  background-color: var(--quorum-orange);
+  border-color: var(--quorum-orange);
+  color: #ffffff;
+}
+
+.btn-quorum-orange:hover,
+.btn-quorum-orange:focus {
+  background-color: #e56b00;
+  border-color: #e56b00;
+  color: #ffffff;
+}
+
+.admin-blog-title-input {
+  font-size: 2rem;
+  font-weight: 700;
+  border: 0;
+  border-bottom: 2px solid #e5e7eb;
+  border-radius: 0;
+  padding-left: 0;
+}
+
+.admin-blog-title-input:focus {
+  box-shadow: none;
+  border-bottom-color: var(--quorum-mid-green);
+}
+
+.admin-blog-preview-url {
+  font-family: "Courier New", monospace;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #0f172a;
+}
+
+.admin-blog-editor-toolbar {
+  border: 1px solid #d1d5db;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: #ffffff;
+}
+
+.admin-blog-editor-surface {
+  min-height: 460px;
+  border: 1px solid #d1d5db;
+  border-radius: 0 0 8px 8px;
+  background: #ffffff;
+}
+
+.admin-blog-editor-surface .ql-editor {
+  min-height: 420px;
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.admin-blog-cover-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: #f8fafc;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.admin-blog-cover-dropzone.is-dragover {
+  border-color: var(--quorum-mid-green);
+  background: #ecfdf3;
+}
+
+.admin-blog-cover-preview-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  min-height: 124px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-blog-cover-preview {
+  width: 100%;
+  min-height: 124px;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.admin-google-preview {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.admin-google-preview .google-title {
+  color: #1a0dab;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.admin-google-preview .google-url {
+  color: #006621;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.admin-google-preview .google-description {
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.admin-blog-settings-sticky {
+  position: sticky;
+  top: 16px;
+}
+
+.admin-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f2937;
+  text-decoration: none;
+}
+
+.admin-tag-chip.is-active,
+.admin-tag-chip:hover {
+  border-color: var(--quorum-mid-green);
+  background: var(--quorum-mint);
+  color: var(--quorum-dark-green);
+}
+
+.admin-tag-count {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.admin-toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1100;
+}
+
+@media (max-width: 992px) {
+  .admin-blog-title-input {
+    font-size: 1.5rem;
+  }
+
+  .admin-blog-settings-sticky {
+    position: static;
+  }
+
+  .admin-blog-editor-surface {
+    min-height: 320px;
+  }
+
+  .admin-blog-editor-surface .ql-editor {
+    min-height: 280px;
+  }
+}

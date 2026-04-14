@@ -52,6 +52,9 @@ class User(UserMixin, db.Model):
     ratings_given = db.relationship("PeerRating", back_populates="rater", foreign_keys="PeerRating.rater_user_id")
     ratings_received = db.relationship("PeerRating", back_populates="rated", foreign_keys="PeerRating.rated_user_id")
     notifications = db.relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    blog_posts = db.relationship("BlogPost", back_populates="author", foreign_keys="BlogPost.author_user_id")
+    ai_usage_logs = db.relationship("AIUsageLog", back_populates="user", cascade="all, delete-orphan")
+    payments = db.relationship("RazorpayPayment", back_populates="user", cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
         salt = bcrypt.gensalt(rounds=12)

@@ -71,6 +71,8 @@ def detail(id):
     user_applications_by_role_id = {}
     is_creator = False
     is_member = False
+    can_rate_peers = False
+    can_view_peer_ratings = False
 
     if current_user.is_authenticated:
         is_creator = current_user.id == project.creator_user_id
@@ -89,6 +91,17 @@ def detail(id):
                 for application in existing_applications
             }
 
+        if project.status == "completed" and (is_creator or is_member):
+            rate_targets = {
+                role.filled_by_user_id
+                for role in project.roles
+                if role.filled_by_user_id and role.filled_by_user_id != current_user.id
+            }
+            if project.creator_user_id != current_user.id:
+                rate_targets.add(project.creator_user_id)
+            can_rate_peers = bool(rate_targets)
+            can_view_peer_ratings = True
+
     return render_template(
         "projects/detail.html",
         project=project,
@@ -97,6 +110,8 @@ def detail(id):
         user_applications_by_role_id=user_applications_by_role_id,
         is_creator=is_creator,
         is_member=is_member,
+        can_rate_peers=can_rate_peers,
+        can_view_peer_ratings=can_view_peer_ratings,
     )
 
 
@@ -192,10 +207,27 @@ def rate_peers(id):
 
     teammate_map = {user.id: user for user in teammates if user}
     form = PeerRatingForm()
+    teammate_values = list(teammate_map.values())
 
-    if request.method == "POST" and form.validate_on_submit():
+    if request.method == "GET" and not teammate_values:
+        flash("There are no teammates available to rate for this project.", "info")
+        return redirect(url_for("projects_public.project_ratings", id=id))
+
+    if request.method == "POST":
+        if not form.validate_on_submit():
+            flash("Could not submit ratings. Please refresh the page and try again.", "danger")
+            return render_template("projects/rate_peers.html", project=project, teammates=teammate_values, form=form)
+
+        ratings_to_add = []
+        validation_errors = []
+        valid_rating_values = {"1", "2", "3", "4", "5"}
+
         for teammate_id in request.form.getlist("rated_user_ids"):
-            rated_id = int(teammate_id)
+            try:
+                rated_id = int(teammate_id)
+            except (TypeError, ValueError):
+                continue
+
             if rated_id not in teammate_map:
                 continue
 
@@ -207,24 +239,149 @@ def rate_peers(id):
             if existing:
                 continue
 
-            rating = PeerRating(
-                project_id=project.id,
-                rater_user_id=current_user.id,
-                rated_user_id=rated_id,
-                follow_through=int(request.form.get(f"follow_through_{rated_id}", 0)),
-                collaboration=int(request.form.get(f"collaboration_{rated_id}", 0)),
-                quality=int(request.form.get(f"quality_{rated_id}", 0)),
-                testimonial=strip_html(request.form.get(f"testimonial_{rated_id}", ""), 1000),
-                created_at=utcnow(),
-            )
-            db.session.add(rating)
+            score_fields = {
+                "follow_through": request.form.get(f"follow_through_{rated_id}", "").strip(),
+                "collaboration": request.form.get(f"collaboration_{rated_id}", "").strip(),
+                "quality": request.form.get(f"quality_{rated_id}", "").strip(),
+            }
+            invalid_metrics = [
+                metric.replace("_", " ").title()
+                for metric, value in score_fields.items()
+                if value not in valid_rating_values
+            ]
+            if invalid_metrics:
+                validation_errors.append(
+                    f"{teammate_map[rated_id].full_name}: {', '.join(invalid_metrics)} must be between 1 and 5."
+                )
+                continue
 
-        db.session.commit()
+            ratings_to_add.append(
+                PeerRating(
+                    project_id=project.id,
+                    rater_user_id=current_user.id,
+                    rated_user_id=rated_id,
+                    follow_through=int(score_fields["follow_through"]),
+                    collaboration=int(score_fields["collaboration"]),
+                    quality=int(score_fields["quality"]),
+                    testimonial=strip_html(request.form.get(f"testimonial_{rated_id}", ""), 1000),
+                    created_at=utcnow(),
+                )
+            )
+
+        if validation_errors:
+            for message in validation_errors[:3]:
+                flash(message, "danger")
+            if len(validation_errors) > 3:
+                flash("Please correct the remaining teammate ratings and submit again.", "danger")
+            return render_template("projects/rate_peers.html", project=project, teammates=teammate_values, form=form)
+
+        if not ratings_to_add:
+            flash("No new teammate ratings were submitted.", "info")
+            return redirect(url_for("projects_public.project_ratings", id=id))
+
+        db.session.add_all(ratings_to_add)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("Some ratings were already submitted. Please refresh and try again.", "warning")
+            return redirect(url_for("projects_public.rate_peers", id=id))
 
         for teammate in teammate_map.values():
             recompute_reputation(teammate.id)
 
         flash("Thank you for rating your teammates! Your track record has been updated.", "success")
-        return redirect(url_for("profile.public_profile", username=current_user.username))
+        return redirect(url_for("projects_public.project_ratings", id=id))
 
-    return render_template("projects/rate_peers.html", project=project, teammates=list(teammate_map.values()), form=form)
+    return render_template("projects/rate_peers.html", project=project, teammates=teammate_values, form=form)
+
+
+@projects_public_bp.get("/<int:id>/ratings")
+@login_required
+def project_ratings(id):
+    project = Project.query.get_or_404(id)
+    if project.status != "completed":
+        flash("Peer ratings are available after project completion.", "warning")
+        return redirect(url_for("projects_public.detail", id=id))
+
+    is_team_member = (
+        project.creator_user_id == current_user.id
+        or is_project_team_member(project.id, current_user.id)
+    )
+    if not is_team_member:
+        flash("Only verified team members can view peer ratings.", "danger")
+        return redirect(url_for("projects_public.detail", id=id))
+
+    team_map = {}
+    if project.creator:
+        team_map[project.creator.id] = project.creator
+    for role in project.roles:
+        if role.filled_by_user:
+            team_map[role.filled_by_user.id] = role.filled_by_user
+
+    ratings = (
+        PeerRating.query.filter_by(project_id=project.id)
+        .order_by(PeerRating.created_at.desc())
+        .all()
+    )
+
+    summary_map = {
+        user_id: {
+            "user": user,
+            "count": 0,
+            "follow_total": 0,
+            "collab_total": 0,
+            "quality_total": 0,
+            "overall_total": 0.0,
+        }
+        for user_id, user in team_map.items()
+    }
+
+    for rating in ratings:
+        if rating.rated_user_id not in summary_map:
+            continue
+        bucket = summary_map[rating.rated_user_id]
+        bucket["count"] += 1
+        bucket["follow_total"] += rating.follow_through
+        bucket["collab_total"] += rating.collaboration
+        bucket["quality_total"] += rating.quality
+        bucket["overall_total"] += (rating.follow_through + rating.collaboration + rating.quality) / 3.0
+
+    summary_rows = []
+    for bucket in summary_map.values():
+        count = bucket["count"]
+        summary_rows.append(
+            {
+                "user": bucket["user"],
+                "rating_count": count,
+                "avg_follow_through": round(bucket["follow_total"] / count, 2) if count else None,
+                "avg_collaboration": round(bucket["collab_total"] / count, 2) if count else None,
+                "avg_quality": round(bucket["quality_total"] / count, 2) if count else None,
+                "avg_overall": round(bucket["overall_total"] / count, 2) if count else None,
+            }
+        )
+
+    summary_rows.sort(
+        key=lambda row: (
+            row["avg_overall"] is None,
+            -(row["avg_overall"] or 0),
+            row["user"].full_name.lower(),
+        )
+    )
+
+    expected_targets = [user for user in team_map.values() if user.id != current_user.id]
+    rated_by_current = {
+        rating.rated_user_id
+        for rating in ratings
+        if rating.rater_user_id == current_user.id
+    }
+    pending_targets = [user for user in expected_targets if user.id not in rated_by_current]
+
+    return render_template(
+        "projects/ratings_overview.html",
+        project=project,
+        summary_rows=summary_rows,
+        ratings=ratings,
+        pending_targets=pending_targets,
+        expected_targets=expected_targets,
+    )
