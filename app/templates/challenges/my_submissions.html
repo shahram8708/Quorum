@@ -1,0 +1,99 @@
+{% extends 'app_base.html' %}
+{% block title %}My Challenge Submissions | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('challenges.board') }}">Challenges</a></li>
+  <li class="breadcrumb-item active" aria-current="page">My Submissions</li>
+{% endblock %}
+
+{% block app_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1">My Challenge Submissions</h1>
+    <p class="text-muted mb-0">Track the status of solutions you've submitted to civic challenges.</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body d-flex flex-wrap gap-2">
+    <a href="{{ url_for('challenges.my_submissions', status='all') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'all' else 'btn-outline-secondary' }}">All ({{ counts.all }})</a>
+    <a href="{{ url_for('challenges.my_submissions', status='submitted') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'submitted' else 'btn-outline-secondary' }}">Submitted ({{ counts.submitted }})</a>
+    <a href="{{ url_for('challenges.my_submissions', status='under_review') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'under_review' else 'btn-outline-secondary' }}">Under Review ({{ counts.under_review }})</a>
+    <a href="{{ url_for('challenges.my_submissions', status='shortlisted') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'shortlisted' else 'btn-outline-secondary' }}">Shortlisted ({{ counts.shortlisted }})</a>
+    <a href="{{ url_for('challenges.my_submissions', status='winner') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'winner' else 'btn-outline-secondary' }}">Winner ({{ counts.winner }})</a>
+    <a href="{{ url_for('challenges.my_submissions', status='not_selected') }}" class="btn btn-sm {{ 'btn-primary' if status_filter == 'not_selected' else 'btn-outline-secondary' }}">Not Selected ({{ counts.not_selected }})</a>
+  </div>
+</div>
+
+{% if submissions %}
+  <div class="d-flex flex-column gap-3">
+    {% for submission in submissions %}
+      {% set challenge = submission.challenge %}
+      {% set org = challenge.organization if challenge else None %}
+      <article class="card">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <a href="{{ url_for('challenges.detail', id=challenge.id) }}" class="h5 text-decoration-none">{{ challenge.title }}</a>
+              <div class="small text-muted mt-1">
+                {% if org and org.logo_url %}
+                  <img src="{{ resolve_file_url(org.logo_url) }}" width="20" height="20" class="rounded-circle me-1" alt="{{ org.org_name }}" style="object-fit: cover;">
+                {% endif %}
+                {{ org.org_name if org else 'Organization' }}
+              </div>
+            </div>
+            {% set status_class = 'bg-secondary' %}
+            {% set status_style = '' %}
+            {% if submission.status == 'submitted' %}
+              {% set status_class = 'bg-primary' %}
+            {% elif submission.status == 'under_review' %}
+              {% set status_class = 'text-dark' %}
+              {% set status_style = 'background: #f9c66d;' %}
+            {% elif submission.status == 'shortlisted' %}
+              {% set status_class = 'text-bg-info' %}
+            {% elif submission.status == 'winner' %}
+              {% set status_class = 'text-dark' %}
+              {% set status_style = 'background: #f4d03f;' %}
+            {% endif %}
+            <span class="badge {{ status_class }}" style="{{ status_style }}">
+              {{ submission_status_label(submission.status) }}
+            </span>
+          </div>
+
+          <div class="mt-2 small">
+            <div><strong>Team:</strong> {{ submission.team_name }}</div>
+            <div class="text-muted">Submitted on {{ submission.submitted_at.strftime('%d %b %Y') if submission.submitted_at else 'N/A' }}</div>
+          </div>
+
+          {% if submission.org_feedback %}
+            <div class="mt-2 p-2 rounded border border-success-subtle" style="background: #f4fbf6;">
+              <div class="small fw-semibold mb-1">Organization Feedback</div>
+              <div class="small">{{ submission.org_feedback }}</div>
+            </div>
+          {% endif %}
+
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            {% if submission.linked_project %}
+              <a href="{{ url_for('projects_public.detail', id=submission.linked_project.id) }}" class="btn btn-sm btn-outline-secondary">Linked Project</a>
+            {% endif %}
+
+            {% if submission.status == 'submitted' and challenge and challenge.status == 'open' and challenge.deadline >= today %}
+              <a href="{{ url_for('challenges.edit_submission', submission_id=submission.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+            {% endif %}
+
+            <a href="{{ url_for('challenges.detail', id=challenge.id) }}" class="btn btn-sm btn-primary">View Challenge</a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card text-center py-5">
+    <div class="card-body">
+      <div style="font-size: 46px; opacity: 0.3;">📌</div>
+      <h5 class="mt-2">You haven't submitted to any challenges yet</h5>
+      <a href="{{ url_for('challenges.board') }}" class="btn btn-primary mt-2">Browse Challenges</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

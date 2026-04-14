@@ -145,7 +145,17 @@ def organization():
 def billing():
     service = RazorpayService()
     plans = service.get_subscription_plans()
-    return render_template("settings/billing.html", plans=plans)
+    current_plan_key = (current_user.subscription_tier or "free").strip()
+    if current_plan_key not in plans:
+        current_plan_key = "free"
+
+    current_plan_label = (plans.get(current_plan_key) or {}).get("label", current_plan_key.replace("_", " ").title())
+    return render_template(
+        "settings/billing.html",
+        plans=plans,
+        current_plan_key=current_plan_key,
+        current_plan_label=current_plan_label,
+    )
 
 
 @settings_bp.post("/billing/subscribe")
@@ -162,6 +172,10 @@ def billing_subscribe():
 
     if plan not in plans or plans[plan]["amount"] is None:
         return jsonify({"error": "Invalid plan"}), 400
+
+    current_plan_key = (current_user.subscription_tier or "free").strip()
+    if plan == current_plan_key:
+        return jsonify({"error": "You already have this subscription plan."}), 400
 
     order = service.create_order(plans[plan]["amount"], plan)
     return jsonify(order)
@@ -193,6 +207,10 @@ def billing_verify():
 
     if current_user.account_type == "organization" and selected_plan not in ORG_SUBSCRIPTION_TIERS:
         selected_plan = "org_starter"
+
+    current_plan_key = (current_user.subscription_tier or "free").strip()
+    if selected_plan == current_plan_key:
+        return jsonify({"success": False, "error": "already_on_plan", "message": "You already have this subscription plan."}), 400
 
     plans = service.get_subscription_plans()
     plan_amount_paise = int((plans.get(selected_plan) or {}).get("amount") or 0)

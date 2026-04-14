@@ -137,3 +137,61 @@ def send_weekly_digest(team_member, project, digest_data):
         f"{current_app.config['BASE_URL']}/my-projects/{project.id}/tasks",
     )
     _send(team_member.email, f"Weekly digest for {project.title}", html)
+
+
+def send_challenge_submission_received(org_user, challenge, submission):
+    """Notify org when a new submission arrives for their challenge."""
+    manage_url = f"{current_app.config['BASE_URL']}/org/challenges/{challenge.id}"
+    summary = (submission.approach_summary or "").strip()
+    if len(summary) > 300:
+        summary = f"{summary[:300]}..."
+
+    html = _base_email_html(
+        f"New submission for {challenge.title}",
+        (
+            f"<p><strong>Submitter:</strong> {submission.submitter.full_name}</p>"
+            f"<p><strong>Team:</strong> {submission.team_name}</p>"
+            f"<p><strong>Approach summary:</strong> {summary}</p>"
+        ),
+        "Review Submission",
+        manage_url,
+    )
+    _send(org_user.email, f"New submission for {challenge.title}", html)
+
+
+def send_challenge_submission_confirmed(submitter, challenge):
+    """Confirm to submitter that their solution was received."""
+    submissions_url = f"{current_app.config['BASE_URL']}/challenges/my-submissions"
+    html = _base_email_html(
+        f"Your submission to {challenge.title} is received",
+        (
+            f"<p>Thanks for submitting your solution for <strong>{challenge.title}</strong>.</p>"
+            f"<p>We'll notify you when the organization updates your submission status.</p>"
+            f"<p><strong>Deadline reminder:</strong> {challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A'}</p>"
+        ),
+        "View My Submissions",
+        submissions_url,
+    )
+    _send(submitter.email, f"Your submission to {challenge.title} is received", html)
+
+
+def send_challenge_status_update(submitter, challenge, new_status, org_feedback=None):
+    """Notify submitter when org changes their submission status."""
+    submissions_url = f"{current_app.config['BASE_URL']}/challenges/my-submissions"
+    readable_status = str(new_status or "submitted").replace("_", " ").title()
+
+    feedback_html = ""
+    if org_feedback:
+        feedback_html = f"<p><strong>Organization feedback:</strong> {org_feedback}</p>"
+
+    html = _base_email_html(
+        f"[Status Update] Your submission for {challenge.title}",
+        (
+            f"<p>Your submission status is now <strong>{readable_status}</strong>.</p>"
+            f"{feedback_html}"
+            "<p>You can view the latest details from your submissions dashboard.</p>"
+        ),
+        "Open My Submissions",
+        submissions_url,
+    )
+    _send(submitter.email, f"[Status Update] Your submission for {challenge.title}", html)

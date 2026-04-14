@@ -5,17 +5,28 @@ from datetime import date, timedelta
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf.csrf import ValidationError
+from sqlalchemy.orm import joinedload
 
 from app.extensions import db, limiter
-from app.models import CivicChallenge, OrganizationAccount, Project, User
+from app.models import ChallengeSubmission, CivicChallenge, OrganizationAccount, Project, User
 from app.routes import create_notification, subscription_required, validate_ajax_csrf
 from app.services.ai_service import AIService
+from app.services.email_service import send_challenge_status_update
+from app.services.file_handler import generate_presigned_url
 from app.services.project_search import build_project_query
 from app.utils import strip_html, utcnow
 
 
 org_bp = Blueprint("org", __name__, url_prefix="/org")
 logger = logging.getLogger("quorum.routes")
+
+SUBMISSION_STATUS_TRANSITIONS = {
+    "submitted": {"under_review", "shortlisted"},
+    "under_review": {"shortlisted"},
+    "shortlisted": {"winner", "not_selected"},
+    "winner": set(),
+    "not_selected": set(),
+}
 
 
 def _org_profile_complete(org: OrganizationAccount | None) -> bool:
@@ -45,6 +56,15 @@ def _redirect_for_org_setup():
     return redirect(url_for("settings.organization", next=request.path))
 
 
+def _org_challenge_or_404(org: OrganizationAccount, challenge_id: int) -> CivicChallenge:
+    return CivicChallenge.query.filter_by(id=challenge_id, org_id=org.id).first_or_404()
+
+
+def _is_valid_submission_transition(current_status: str, next_status: str) -> bool:
+    allowed = SUBMISSION_STATUS_TRANSITIONS.get(current_status, set())
+    return next_status in allowed
+
+
 @org_bp.get("/dashboard")
 @login_required
 def dashboard():
@@ -53,16 +73,23 @@ def dashboard():
         return _redirect_for_org_setup()
 
     projects_supported = Project.query.filter_by(org_support_id=org.id).all()
-    challenges = CivicChallenge.query.filter_by(org_id=org.id).order_by(CivicChallenge.created_at.desc()).all()
+    active_challenges = CivicChallenge.query.filter_by(org_id=org.id).order_by(CivicChallenge.created_at.desc()).all()
 
     impact = {
         "projects_supported": len(projects_supported),
         "outcomes_achieved": len([project for project in projects_supported if project.status == "completed"]),
-        "grants_disbursed_inr": sum((challenge.grant_amount_inr or 0) for challenge in challenges),
+        "grants_disbursed_inr": sum((challenge.grant_amount_inr or 0) for challenge in active_challenges),
         "participants_engaged": sum(max(1, len(project.roles)) for project in projects_supported),
     }
 
-    return render_template("org/dashboard.html", org=org, projects_supported=projects_supported, challenges=challenges, impact=impact)
+    return render_template(
+        "org/dashboard.html",
+        org=org,
+        projects_supported=projects_supported,
+        active_challenges=active_challenges,
+        today=date.today(),
+        impact=impact,
+    )
 
 
 @org_bp.get("/discover")
@@ -250,6 +277,243 @@ def post_challenge():
         return redirect(url_for("org.dashboard"))
 
     return render_template("org/post_challenge.html", org=org, form_data=query_prefill, prefill_meta=prefill_meta)
+
+
+@org_bp.route("/challenges/<int:id>/edit", methods=["GET", "POST"])
+@login_required
+@subscription_required(["org_starter", "org_team", "enterprise"])
+def edit_challenge(id):
+    org = _require_org_account()
+    if not org:
+        return _redirect_for_org_setup()
+
+    challenge = _org_challenge_or_404(org, id)
+
+    if request.method == "POST":
+        title = strip_html(request.form.get("title", ""), 500)
+        description = strip_html(request.form.get("description", ""), 3000)
+        domain = strip_html(request.form.get("domain", "community"), 100)
+        geographic_scope = strip_html(request.form.get("geographic_scope", "India"), 200)
+        grant_amount_text = strip_html(request.form.get("grant_amount_inr", ""), 30).strip()
+        deadline_text = strip_html(request.form.get("deadline", ""), 40).strip()
+
+        try:
+            grant_amount_inr = int(grant_amount_text or 0)
+        except ValueError:
+            flash("Grant amount must be a valid number.", "danger")
+            return redirect(url_for("org.edit_challenge", id=challenge.id))
+
+        try:
+            parsed_deadline = date.fromisoformat(deadline_text) if deadline_text else None
+        except ValueError:
+            flash("Please provide a valid deadline date.", "danger")
+            return redirect(url_for("org.edit_challenge", id=challenge.id))
+
+        if not title or not description or not parsed_deadline:
+            flash("Please fill in all required challenge fields.", "danger")
+            return redirect(url_for("org.edit_challenge", id=challenge.id))
+
+        challenge.title = title
+        challenge.description = description
+        challenge.domain = domain
+        challenge.geographic_scope = geographic_scope
+        challenge.grant_amount_inr = grant_amount_inr
+        challenge.deadline = parsed_deadline
+
+        db.session.commit()
+        flash("Challenge updated.", "success")
+        return redirect(url_for("org.challenge_detail", id=challenge.id))
+
+    form_data = {
+        "title": challenge.title,
+        "description": challenge.description,
+        "domain": challenge.domain,
+        "geographic_scope": challenge.geographic_scope,
+        "grant_amount_inr": challenge.grant_amount_inr or 0,
+        "deadline": challenge.deadline.isoformat() if challenge.deadline else "",
+    }
+
+    return render_template(
+        "org/post_challenge.html",
+        org=org,
+        form_data=form_data,
+        prefill_meta={"from_ai": False},
+        editing_challenge=challenge,
+    )
+
+
+@org_bp.get("/challenges/<int:id>")
+@login_required
+def challenge_detail(id):
+    org = _require_org_account()
+    if not org:
+        return _redirect_for_org_setup()
+
+    challenge = _org_challenge_or_404(org, id)
+    submissions = (
+        ChallengeSubmission.query.options(
+            joinedload(ChallengeSubmission.submitter),
+            joinedload(ChallengeSubmission.linked_project),
+        )
+        .filter(ChallengeSubmission.challenge_id == challenge.id)
+        .order_by(ChallengeSubmission.submitted_at.desc())
+        .all()
+    )
+
+    submissions_by_status = {
+        "submitted": [],
+        "under_review": [],
+        "shortlisted": [],
+        "winner": [],
+        "not_selected": [],
+    }
+
+    for submission in submissions:
+        if submission.proposal_document_path:
+            submission.proposal_document_url = generate_presigned_url(submission.proposal_document_path)
+        submissions_by_status.setdefault(submission.status, []).append(submission)
+
+    total_submissions = len(submissions)
+    days_remaining = (challenge.deadline - date.today()).days if challenge.deadline else None
+
+    return render_template(
+        "org/challenge_detail.html",
+        challenge=challenge,
+        submissions=submissions,
+        submissions_by_status=submissions_by_status,
+        total_submissions=total_submissions,
+        days_remaining=days_remaining,
+    )
+
+
+@org_bp.post("/challenges/<int:challenge_id>/submissions/<int:submission_id>/status")
+@login_required
+def update_submission_status(challenge_id, submission_id):
+    org = _require_org_account()
+    if not org:
+        return jsonify({"success": False, "error": "Organization account required."}), 403
+
+    try:
+        validate_ajax_csrf()
+    except ValidationError:
+        return jsonify({"success": False, "error": "Invalid CSRF token"}), 400
+
+    challenge = _org_challenge_or_404(org, challenge_id)
+    submission = ChallengeSubmission.query.filter_by(
+        id=submission_id,
+        challenge_id=challenge.id,
+    ).first_or_404()
+
+    payload = request.get_json(silent=True) or {}
+    requested_status = strip_html(payload.get("status", ""), 50).strip().lower()
+    feedback = strip_html(payload.get("feedback", ""), 2000).strip()
+    feedback_supplied = "feedback" in payload
+
+    if feedback_supplied:
+        submission.org_feedback = feedback or None
+
+    if requested_status and requested_status != submission.status:
+        if requested_status not in {"submitted", "under_review", "shortlisted", "winner", "not_selected"}:
+            return jsonify({"success": False, "error": "Invalid submission status."}), 400
+
+        if not _is_valid_submission_transition(submission.status, requested_status):
+            return jsonify(
+                {
+                    "success": False,
+                    "error": f"Invalid status transition: {submission.status} -> {requested_status}",
+                }
+            ), 400
+
+        submission.status = requested_status
+        submission.reviewed_at = utcnow()
+
+        if requested_status == "winner":
+            challenge.winner_submission_id = submission.id
+            challenge.status = "awarded"
+        elif challenge.winner_submission_id == submission.id:
+            challenge.winner_submission_id = None
+
+        create_notification(
+            submission.submitter_user_id,
+            "challenge_status_update",
+            f"Submission update for {challenge.title}",
+            f"Your submission is now marked as {requested_status.replace('_', ' ')}.",
+            f"/challenges/{challenge.id}",
+        )
+
+        try:
+            send_challenge_status_update(
+                submission.submitter,
+                challenge,
+                requested_status,
+                submission.org_feedback,
+            )
+        except Exception:
+            pass
+
+    db.session.commit()
+
+    flash("Submission status updated.", "success")
+    return jsonify(
+        {
+            "success": True,
+            "new_status": submission.status,
+            "feedback": submission.org_feedback or "",
+        }
+    )
+
+
+@org_bp.post("/challenges/<int:id>/close")
+@login_required
+def close_challenge(id):
+    org = _require_org_account()
+    if not org:
+        return _redirect_for_org_setup()
+
+    challenge = _org_challenge_or_404(org, id)
+    challenge.status = "closed"
+
+    submissions = ChallengeSubmission.query.filter_by(challenge_id=challenge.id).all()
+    for submission in submissions:
+        create_notification(
+            submission.submitter_user_id,
+            "challenge_closed",
+            f"Challenge closed: {challenge.title}",
+            "The organization has completed challenge review. Check your submission status.",
+            f"/challenges/{challenge.id}",
+        )
+
+        try:
+            send_challenge_status_update(
+                submission.submitter,
+                challenge,
+                submission.status,
+                submission.org_feedback,
+            )
+        except Exception:
+            pass
+
+    db.session.commit()
+    flash("Challenge closed and submitters notified.", "success")
+    return redirect(url_for("org.dashboard"))
+
+
+@org_bp.post("/challenges/<int:id>/delete")
+@login_required
+def delete_challenge(id):
+    org = _require_org_account()
+    if not org:
+        return _redirect_for_org_setup()
+
+    challenge = _org_challenge_or_404(org, id)
+    if challenge.status != "open" or int(challenge.submission_count or 0) > 0:
+        flash("Only open challenges with zero submissions can be deleted.", "warning")
+        return redirect(url_for("org.challenge_detail", id=challenge.id))
+
+    db.session.delete(challenge)
+    db.session.commit()
+    flash("Challenge deleted.", "success")
+    return redirect(url_for("org.dashboard"))
 
 
 @org_bp.post("/message/<int:project_id>")

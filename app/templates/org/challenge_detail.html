@@ -1,0 +1,267 @@
+{% extends 'app_base.html' %}
+{% block title %}Manage Challenge | {{ challenge.title }} | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('org.dashboard') }}">Org Dashboard</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Challenge Detail</li>
+{% endblock %}
+
+{% block app_content %}
+<div class="row g-4">
+  <div class="col-xl-9">
+    <section class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <h2 class="mb-1">{{ challenge.title }}</h2>
+            <div class="small text-muted">{{ challenge.domain|replace('_', ' ')|title }} · {{ challenge.geographic_scope }}</div>
+          </div>
+          <div>
+            {% if challenge.status == 'open' %}
+              <span class="badge bg-success">Open</span>
+            {% elif challenge.status == 'closed' %}
+              <span class="badge bg-secondary">Closed</span>
+            {% else %}
+              <span class="badge" style="background: var(--quorum-amber);">Awarded</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-2 mt-2">
+          <div class="col-md-4"><div class="small text-muted">Deadline</div><div class="fw-semibold">{{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A' }} {% if days_remaining is not none %}({{ days_remaining }} days){% endif %}</div></div>
+          <div class="col-md-4"><div class="small text-muted">Grant</div><div class="fw-semibold">{% if challenge.grant_amount_inr %}₹{{ "{:,.0f}".format(challenge.grant_amount_inr / 100) }}{% else %}No grant{% endif %}</div></div>
+          <div class="col-md-4"><div class="small text-muted">Total submissions</div><div class="fw-semibold">{{ total_submissions }}</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 mb-3" id="submissionTabs">
+          <button class="btn btn-sm btn-primary" data-tab="all">All ({{ total_submissions }})</button>
+          <button class="btn btn-sm btn-outline-secondary" data-tab="submitted">Submitted ({{ submissions_by_status.submitted|length }})</button>
+          <button class="btn btn-sm btn-outline-secondary" data-tab="under_review">Under Review ({{ submissions_by_status.under_review|length }})</button>
+          <button class="btn btn-sm btn-outline-secondary" data-tab="shortlisted">Shortlisted ({{ submissions_by_status.shortlisted|length }})</button>
+          <button class="btn btn-sm btn-outline-secondary" data-tab="winner">Winner ({{ submissions_by_status.winner|length }})</button>
+          <button class="btn btn-sm btn-outline-secondary" data-tab="not_selected">Not Selected ({{ submissions_by_status.not_selected|length }})</button>
+        </div>
+
+        {% if submissions %}
+          <div class="table-responsive">
+            <table class="table align-middle" id="submissionTable">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Approach</th>
+                  <th>Links</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th>Feedback</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for submission in submissions %}
+                  <tr data-status="{{ submission.status }}" data-submission-id="{{ submission.id }}">
+                    <td>
+                      <div class="fw-semibold">{{ submission.team_name }}</div>
+                      <div class="small mt-1">
+                        {% if submission.submitter and submission.submitter.profile_photo_url %}
+                          <img src="{{ resolve_file_url(submission.submitter.profile_photo_url) }}" class="rounded-circle me-1" width="22" height="22" style="object-fit: cover;" alt="{{ submission.submitter.full_name }}">
+                        {% endif %}
+                        {% if submission.submitter %}
+                          <a href="{{ url_for('profile.public_profile', username=submission.submitter.username) }}" class="text-decoration-none">{{ submission.submitter.username }}</a>
+                        {% else %}
+                          <span class="text-muted">Unknown user</span>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td style="max-width: 320px;">
+                      <details>
+                        <summary class="small text-muted">{{ submission.approach_summary[:200] }}{% if submission.approach_summary|length > 200 %}...{% endif %}</summary>
+                        <div class="small mt-2" style="white-space: pre-line;">{{ submission.approach_summary }}</div>
+                      </details>
+                    </td>
+                    <td>
+                      <div class="d-flex flex-column gap-1 small">
+                        {% if submission.linked_project %}
+                          <a href="{{ url_for('projects_public.detail', id=submission.linked_project.id) }}">Linked project</a>
+                        {% endif %}
+                        {% if submission.proposal_document_url %}
+                          <a href="{{ submission.proposal_document_url }}" target="_blank" rel="noopener">Download proposal</a>
+                        {% endif %}
+                        {% if submission.external_link %}
+                          <a href="{{ submission.external_link }}" target="_blank" rel="noopener">External link</a>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td class="small text-muted">{{ submission.submitted_at.strftime('%d %b %Y') if submission.submitted_at else 'N/A' }}</td>
+                    <td>
+                      <select class="form-select form-select-sm submission-status-select" data-current="{{ submission.status }}">
+                        <option value="submitted" {% if submission.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                        <option value="under_review" {% if submission.status == 'under_review' %}selected{% endif %}>Under Review</option>
+                        <option value="shortlisted" {% if submission.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
+                        <option value="winner" {% if submission.status == 'winner' %}selected{% endif %}>Winner</option>
+                        <option value="not_selected" {% if submission.status == 'not_selected' %}selected{% endif %}>Not Selected</option>
+                      </select>
+                    </td>
+                    <td>
+                      <textarea class="form-control form-control-sm submission-feedback" rows="2" placeholder="Leave feedback...">{{ submission.org_feedback or '' }}</textarea>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No submissions yet.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div class="col-xl-3">
+    <section class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-3">Challenge Actions</h6>
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('org.edit_challenge', id=challenge.id) }}" class="btn btn-outline-secondary btn-sm">Edit Challenge</a>
+
+          <form method="post" action="{{ url_for('org.close_challenge', id=challenge.id) }}" onsubmit="return confirm('Close this challenge and notify all submitters?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-warning btn-sm w-100" type="submit">Close Challenge</button>
+          </form>
+
+          {% if challenge.status == 'open' and (challenge.submission_count or 0) == 0 %}
+            <form method="post" action="{{ url_for('org.delete_challenge', id=challenge.id) }}" onsubmit="return confirm('Delete this challenge permanently?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-danger btn-sm w-100" type="submit">Delete Challenge</button>
+            </form>
+          {% endif %}
+
+          <a href="{{ url_for('challenges.detail', id=challenge.id) }}" class="btn btn-primary btn-sm" target="_blank" rel="noopener">View Public Page</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body small">
+        <div class="d-flex justify-content-between mb-1"><span>Published</span><span class="fw-semibold">{{ challenge.created_at.strftime('%d %b %Y') if challenge.created_at else 'N/A' }}</span></div>
+        <div class="d-flex justify-content-between mb-1"><span>Status</span><span class="fw-semibold">{{ challenge.status|replace('_', ' ')|title }}</span></div>
+        <div class="d-flex justify-content-between"><span>Submissions</span><span class="fw-semibold">{{ challenge.submission_count or 0 }}</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="statusToastHost" style="position: fixed; right: 18px; top: 82px; z-index: 1100;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const tabsContainer = document.getElementById('submissionTabs');
+  const rows = Array.from(document.querySelectorAll('#submissionTable tbody tr'));
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  const endpointBase = '{{ url_for("org.update_submission_status", challenge_id=challenge.id, submission_id=0) }}';
+
+  function toast(message, tone) {
+    const host = document.getElementById('statusToastHost');
+    if (!host) return;
+    const el = document.createElement('div');
+    el.className = `alert alert-${tone || 'info'} shadow mb-2`;
+    el.textContent = message;
+    host.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
+
+  function applyTab(tab) {
+    rows.forEach((row) => {
+      if (tab === 'all' || row.dataset.status === tab) {
+        row.classList.remove('d-none');
+      } else {
+        row.classList.add('d-none');
+      }
+    });
+
+    tabsContainer.querySelectorAll('button').forEach((btn) => {
+      if (btn.dataset.tab === tab) {
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-primary');
+      } else {
+        btn.classList.add('btn-outline-secondary');
+        btn.classList.remove('btn-primary');
+      }
+    });
+  }
+
+  if (tabsContainer) {
+    tabsContainer.addEventListener('click', (event) => {
+      const btn = event.target.closest('button[data-tab]');
+      if (!btn) return;
+      applyTab(btn.dataset.tab);
+    });
+  }
+
+  applyTab('all');
+
+  async function postUpdate(submissionId, payload) {
+    const response = await fetch(endpointBase.replace('/0/status', `/${submissionId}/status`), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Unable to update submission.');
+    }
+    return data;
+  }
+
+  rows.forEach((row) => {
+    const submissionId = row.dataset.submissionId;
+    const statusSelect = row.querySelector('.submission-status-select');
+    const feedbackField = row.querySelector('.submission-feedback');
+
+    if (statusSelect) {
+      statusSelect.addEventListener('change', async () => {
+        const previousStatus = statusSelect.dataset.current;
+        try {
+          const payload = {
+            status: statusSelect.value,
+            feedback: feedbackField ? feedbackField.value : ''
+          };
+          const data = await postUpdate(submissionId, payload);
+          statusSelect.dataset.current = data.new_status;
+          row.dataset.status = data.new_status;
+          toast(`Submission marked as ${data.new_status.replace('_', ' ')}`, 'success');
+        } catch (error) {
+          statusSelect.value = previousStatus;
+          toast(error.message || 'Could not update status', 'warning');
+        }
+      });
+    }
+
+    if (feedbackField) {
+      let timer = null;
+      feedbackField.addEventListener('input', () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+        timer = setTimeout(async () => {
+          try {
+            await postUpdate(submissionId, { feedback: feedbackField.value });
+            toast('Feedback saved', 'info');
+          } catch (error) {
+            toast(error.message || 'Could not save feedback', 'warning');
+          }
+        }, 2000);
+      });
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends 'app_base.html' %}
+{% block title %}Submit Solution | {{ challenge.title }} | Quorum{% endblock %}
+
+{% block breadcrumbs %}
+  <li class="breadcrumb-item"><a href="{{ url_for('challenges.board') }}">Challenges</a></li>
+  <li class="breadcrumb-item"><a href="{{ url_for('challenges.detail', id=challenge.id) }}">{{ challenge.title }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Submit Solution</li>
+{% endblock %}
+
+{% block app_content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="mb-1">Submit Your Solution</h2>
+        <p class="text-muted mb-0">Deadline: {{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A' }} · {{ days_remaining }} days left</p>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header bg-white">
+        <button type="button" class="btn btn-link p-0 text-decoration-none" id="toggleAiPanel">✨ Get AI Help Structuring Your Approach</button>
+      </div>
+      <div class="card-body d-none" id="aiPanelBody">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="generateAiBriefBtn">Generate AI Suggestions</button>
+        <div id="aiLoading" class="small text-muted mt-2 d-none">Generating suggestions...</div>
+        <div id="aiResultBox" class="mt-3 p-3 rounded d-none" style="background: var(--quorum-mint); white-space: pre-line;"></div>
+        <button type="button" class="btn btn-sm btn-primary mt-3 d-none" id="useAiSuggestionsBtn">Use These Suggestions</button>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="card">
+      <div class="card-body">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.team_name.label(class='form-label') }}
+          {{ form.team_name(class='form-control') }}
+        </div>
+
+        <hr>
+
+        <div class="mb-3">
+          {{ form.approach_summary.label(class='form-label') }}
+          {{ form.approach_summary(class='form-control', id='approachSummaryField') }}
+          <div class="small text-muted mt-1"><span id="approachCharCount">0</span>/1000 characters</div>
+        </div>
+
+        <hr>
+
+        <div class="mb-3">
+          {{ form.linked_project_id.label(class='form-label') }}
+          {{ form.linked_project_id(class='form-select') }}
+          <div class="small text-muted mt-1">Linking your project shows the org your team's work in real-time.</div>
+        </div>
+
+        <div class="mb-3">
+          {{ form.external_link.label(class='form-label') }}
+          {{ form.external_link(class='form-control') }}
+        </div>
+
+        {% if challenge.submission_format in ['proposal_doc', 'both'] %}
+          <div class="mb-3">
+            {{ form.proposal_document.label(class='form-label') }}
+            <div class="border rounded p-3" id="fileDropZone" style="background: #FAFCFB;">
+              {{ form.proposal_document(class='form-control', id='proposalDocumentInput') }}
+              <div class="small text-muted mt-2">Drag and drop your PDF or DOCX file (max 10MB).</div>
+              <div class="small fw-semibold mt-2" id="proposalFileName"></div>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="mb-3">
+          {{ form.team_members_text.label(class='form-label') }}
+          {{ form.team_members_text(class='form-control') }}
+          <div class="small text-muted mt-1">Optional. Team members will be notified.</div>
+        </div>
+
+        <div class="form-check mb-3">
+          {{ form.agree_terms(class='form-check-input', id='agreeTermsCheck') }}
+          {{ form.agree_terms.label(class='form-check-label', for='agreeTermsCheck') }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Submit Solution</button>
+        <a href="{{ url_for('challenges.detail', id=challenge.id) }}" class="btn btn-link w-100 mt-2">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-4"  style="position: sticky; top: 86px;">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-1">Challenge Summary</h6>
+        <p class="fw-semibold mb-1">{{ challenge.title }}</p>
+        <p class="small text-muted mb-1">{{ challenge.organization.org_name if challenge.organization else 'Organization' }}</p>
+        <p class="small mb-1"><strong>Grant:</strong> {% if challenge.grant_amount_inr %}₹{{ "{:,.0f}".format(challenge.grant_amount_inr / 100) }}{% else %}No grant{% endif %}</p>
+        <p class="small mb-1"><strong>Deadline:</strong> {{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A' }}</p>
+        <p class="small mb-0"><strong>Domain:</strong> {{ challenge.domain|replace('_', ' ')|title }}</p>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Evaluation Criteria</h6>
+        <p class="small mb-0" style="white-space: pre-line;">{{ challenge.evaluation_criteria or 'The organization will evaluate clarity, feasibility, and measurable impact.' }}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="mb-2">Writing a strong submission</h6>
+        <ul class="small mb-0">
+          <li>Be specific about your approach, not just the problem</li>
+          <li>Include measurable outcomes you aim for</li>
+          <li>Mention your team's relevant skills and experience</li>
+          <li>Link your Quorum project if you've already started</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  const toggleBtn = document.getElementById('toggleAiPanel');
+  const panelBody = document.getElementById('aiPanelBody');
+  const generateBtn = document.getElementById('generateAiBriefBtn');
+  const loadingEl = document.getElementById('aiLoading');
+  const resultBox = document.getElementById('aiResultBox');
+  const useBtn = document.getElementById('useAiSuggestionsBtn');
+  const approachField = document.getElementById('approachSummaryField');
+  const charCount = document.getElementById('approachCharCount');
+
+  function updateCount() {
+    if (!approachField || !charCount) return;
+    charCount.textContent = String(approachField.value.length);
+  }
+  updateCount();
+  if (approachField) {
+    approachField.addEventListener('input', updateCount);
+  }
+
+  if (toggleBtn && panelBody) {
+    toggleBtn.addEventListener('click', () => {
+      panelBody.classList.toggle('d-none');
+    });
+  }
+
+  if (generateBtn && loadingEl && resultBox && useBtn) {
+    generateBtn.addEventListener('click', async () => {
+      generateBtn.disabled = true;
+      loadingEl.classList.remove('d-none');
+      resultBox.classList.add('d-none');
+      useBtn.classList.add('d-none');
+
+      try {
+        const response = await fetch('{{ url_for("challenges.generate_brief") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrf
+          },
+          body: JSON.stringify({
+            challenge_title: {{ challenge.title|tojson }},
+            challenge_description: {{ challenge.description|tojson }},
+            domain: {{ challenge.domain|tojson }}
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Unable to generate AI brief.');
+        }
+
+        resultBox.textContent = data.brief_suggestions || 'No suggestions returned.';
+        resultBox.classList.remove('d-none');
+        useBtn.classList.remove('d-none');
+      } catch (error) {
+        resultBox.textContent = error.message || 'AI assistant is currently unavailable.';
+        resultBox.classList.remove('d-none');
+      } finally {
+        loadingEl.classList.add('d-none');
+        generateBtn.disabled = false;
+      }
+    });
+
+    useBtn.addEventListener('click', () => {
+      if (!approachField) return;
+      approachField.value = resultBox.textContent.trim();
+      updateCount();
+      approachField.focus();
+    });
+  }
+
+  const fileInput = document.getElementById('proposalDocumentInput');
+  const fileName = document.getElementById('proposalFileName');
+  if (fileInput && fileName) {
+    fileInput.addEventListener('change', () => {
+      const selected = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : '';
+      fileName.textContent = selected ? `Selected: ${selected}` : '';
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -36,4 +36,24 @@ class CivicChallenge(db.Model):
     status = db.Column(db.String(50), default="open", nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
+    problem_brief = db.Column(db.Text, nullable=True)
+    eligibility_criteria = db.Column(db.Text, nullable=True)
+    evaluation_criteria = db.Column(db.Text, nullable=True)
+    max_team_size = db.Column(db.Integer, default=12, nullable=False)
+    min_team_size = db.Column(db.Integer, default=2, nullable=False)
+    required_domains = db.Column(db.JSON, default=list, nullable=False)
+    resources_provided = db.Column(db.Text, nullable=True)
+    submission_format = db.Column(db.String(100), default="project_link", nullable=False)
+    view_count = db.Column(db.Integer, default=0, nullable=False)
+    submission_count = db.Column(db.Integer, default=0, nullable=False)
+    winner_submission_id = db.Column(db.Integer, db.ForeignKey("challenge_submissions.id"), nullable=True)
+    cover_image_url = db.Column(db.String(500), nullable=True)
+    tags = db.Column(db.JSON, default=list, nullable=False)
+
     organization = db.relationship("OrganizationAccount", back_populates="challenges")
+    submissions = db.relationship(
+        "ChallengeSubmission",
+        back_populates="challenge",
+        foreign_keys="ChallengeSubmission.challenge_id",
+        cascade="all, delete-orphan",
+    )

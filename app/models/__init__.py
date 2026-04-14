@@ -1,5 +1,6 @@
 from app.models.analytics import AIUsageLog, RazorpayPayment
 from app.models.blog import BLOG_CATEGORIES, BLOG_STATUSES, BlogPost
+from app.models.challenge_submission import ChallengeSubmission
 from app.models.feed import FeedPost
 from app.models.milestone import ProjectMilestone
 from app.models.organization import CivicChallenge, OrganizationAccount
@@ -17,6 +18,7 @@ __all__ = [
     "BLOG_CATEGORIES",
     "BLOG_STATUSES",
     "BlogPost",
+    "ChallengeSubmission",
     "CivicChallenge",
     "FeedPost",
     "Notification",

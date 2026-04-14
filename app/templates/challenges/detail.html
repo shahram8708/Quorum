@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% block title %}{{ challenge.title }} | Civic Challenge | Quorum{% endblock %}
+
+{% block head_extra %}
+<style>
+  .challenge-hero {
+    background: linear-gradient(140deg, #0e3d22 0%, #145a32 60%, #1e8449 100%);
+    color: #ffffff;
+    border-radius: 18px;
+    padding: 26px;
+    box-shadow: 0 14px 36px rgba(14, 61, 34, 0.24);
+  }
+
+  .challenge-info-card,
+  .challenge-share-card,
+  .challenge-grant-card,
+  .challenge-related-card {
+    border-radius: 14px;
+    border: 1px solid var(--quorum-border);
+    box-shadow: 0 6px 18px rgba(26, 37, 47, 0.06);
+  }
+
+  .challenge-submit-cta {
+    background: linear-gradient(135deg, #fff2e2 0%, #ffe8cd 100%);
+    border: 1px solid #f5c693;
+    border-radius: 14px;
+  }
+
+  .challenge-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .challenge-toast {
+    position: fixed;
+    right: 18px;
+    top: 88px;
+    z-index: 1100;
+    min-width: 260px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('challenges.board') }}">Challenges</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ challenge.title }}</li>
+    </ol>
+  </nav>
+
+  <section class="challenge-hero mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          {% if challenge.organization and challenge.organization.logo_url %}
+            <img src="{{ resolve_file_url(challenge.organization.logo_url) }}" alt="{{ challenge.organization.org_name }}" width="34" height="34" class="rounded-circle" style="object-fit: cover;">
+          {% endif %}
+          <a href="{{ url_for('main.for_organizations') }}" class="text-white text-decoration-none fw-semibold">
+            {{ challenge.organization.org_name if challenge.organization else 'Organization' }}
+          </a>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="badge text-bg-light">{{ challenge.domain|replace('_', ' ')|title }}</span>
+          {% if challenge.status == 'open' %}
+            <span class="badge bg-success">Open</span>
+          {% elif challenge.status == 'closed' %}
+            <span class="badge bg-secondary">Closed</span>
+          {% else %}
+            <span class="badge" style="background: var(--quorum-amber);">Awarded</span>
+          {% endif %}
+          <span class="badge text-bg-dark">{{ challenge.geographic_scope }}</span>
+        </div>
+        <h1 class="mb-2">{{ challenge.title }}</h1>
+        <p class="mb-0" style="max-width: 760px;">{{ challenge.problem_brief or challenge.description[:220] }}{% if not challenge.problem_brief and challenge.description|length > 220 %}...{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="row g-2 mt-3">
+      <div class="col-6 col-lg-3">
+        <div class="bg-white bg-opacity-10 rounded p-2">
+          <div class="small text-uppercase opacity-75">Grant</div>
+          <div class="fw-semibold">{% if challenge.grant_amount_inr %}₹{{ "{:,.0f}".format(challenge.grant_amount_inr / 100) }}{% else %}No grant{% endif %}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="bg-white bg-opacity-10 rounded p-2">
+          <div class="small text-uppercase opacity-75">Deadline</div>
+          <div class="fw-semibold">{{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A' }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="bg-white bg-opacity-10 rounded p-2">
+          <div class="small text-uppercase opacity-75">Submissions</div>
+          <div class="fw-semibold">{{ challenge.submission_count or 0 }}</div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="bg-white bg-opacity-10 rounded p-2">
+          <div class="small text-uppercase opacity-75">Views</div>
+          <div class="fw-semibold">{{ challenge.view_count or 0 }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <section class="card mb-3">
+        <div class="card-body">
+          <h4 class="mb-2">The Problem</h4>
+          <p class="mb-0" style="white-space: pre-line;">{{ challenge.description }}</p>
+        </div>
+      </section>
+
+      <section class="card mb-3">
+        <div class="card-body">
+          <h4 class="mb-2">What We're Looking For</h4>
+          {% if challenge.evaluation_criteria %}
+            {% if '\n' in challenge.evaluation_criteria %}
+              <ul class="mb-0">
+                {% for line in challenge.evaluation_criteria.splitlines() if line.strip() %}
+                  <li>{{ line }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="mb-0">{{ challenge.evaluation_criteria }}</p>
+            {% endif %}
+          {% else %}
+            <p class="text-muted mb-0">Evaluation criteria will be shared by the organization.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card mb-3">
+        <div class="card-body">
+          <h4 class="mb-2">Eligibility</h4>
+          <p class="mb-0">{{ challenge.eligibility_criteria or 'Open to contributors who can demonstrate a practical and measurable solution approach.' }}</p>
+        </div>
+      </section>
+
+      <section class="card mb-3">
+        <div class="card-body">
+          <h4 class="mb-2">Resources Provided</h4>
+          <p class="mb-0">{{ challenge.resources_provided or 'Support details will be shared with shortlisted teams.' }}</p>
+        </div>
+      </section>
+
+      {% if challenge.status == 'open' %}
+        <section class="card">
+          <div class="card-body">
+            <h4 class="mb-3">Submit Your Solution</h4>
+
+            {% if not current_user.is_authenticated %}
+              <p class="mb-3">Log in or sign up to submit a solution.</p>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Log In</a>
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">Sign Up</a>
+              </div>
+            {% elif user_submission %}
+              <div class="border rounded p-3">
+                <h6 class="mb-2">Your Submission Status</h6>
+                <p class="mb-1"><strong>Team:</strong> {{ user_submission.team_name }}</p>
+                <p class="mb-2">
+                  <span class="challenge-status-pill
+                    {% if user_submission.status == 'winner' %}bg-warning text-dark
+                    {% elif user_submission.status == 'shortlisted' %}bg-info text-dark
+                    {% elif user_submission.status == 'under_review' %}bg-secondary
+                    {% elif user_submission.status == 'not_selected' %}bg-light text-dark border
+                    {% else %}bg-primary{% endif %}">
+                    {{ submission_status_label(user_submission.status) }}
+                  </span>
+                </p>
+                {% if user_submission.org_feedback %}
+                  <div class="alert alert-success py-2 mb-2">{{ user_submission.org_feedback }}</div>
+                {% endif %}
+                {% if user_submission.status == 'submitted' and challenge.status == 'open' %}
+                  <a href="{{ url_for('challenges.edit_submission', submission_id=user_submission.id) }}" class="small">Edit Submission</a>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="challenge-submit-cta p-3">
+                <h5 class="mb-1">Think you can solve this?</h5>
+                <p class="mb-3">Submit your team's approach before {{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'the deadline' }}.</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a href="{{ url_for('challenges.submit_solution', id=challenge.id) }}" class="btn btn-primary">Submit Your Solution</a>
+                  <button type="button" class="btn btn-outline-secondary" id="aiBriefBtn" data-title="{{ challenge.title }}" data-description="{{ challenge.description }}" data-domain="{{ challenge.domain }}">AI Brief Assistant</button>
+                </div>
+                <div id="aiBriefBox" class="mt-3 p-3 rounded d-none" style="background: var(--quorum-mint); white-space: pre-line;"></div>
+              </div>
+            {% endif %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <section class="card challenge-info-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3">Challenge Info</h6>
+          <div class="small mb-2"><strong>Posted by:</strong> {{ challenge.organization.org_name if challenge.organization else 'Organization' }} {% if challenge.organization and challenge.organization.is_verified %}<span class="badge bg-success">Verified</span>{% endif %}</div>
+          <div class="small mb-2"><strong>Posted on:</strong> {{ challenge.created_at.strftime('%d %b %Y') if challenge.created_at else 'N/A' }}</div>
+          <div class="small mb-2"><strong>Domain:</strong> {{ challenge.domain|replace('_', ' ')|title }}</div>
+          <div class="small mb-2"><strong>Geography:</strong> {{ challenge.geographic_scope }}</div>
+          <div class="small mb-2"><strong>Team size:</strong> {{ challenge.min_team_size or 2 }}-{{ challenge.max_team_size or 12 }} people</div>
+          <div class="small mb-2"><strong>Submission format:</strong> {{ submission_format_label }}</div>
+          <div class="small"><strong>Deadline:</strong> {{ challenge.deadline.strftime('%d %b %Y') if challenge.deadline else 'N/A' }} {% if days_remaining is not none %}({{ days_remaining }} days remaining){% endif %}</div>
+        </div>
+      </section>
+
+      {% if challenge.grant_amount_inr %}
+        <section class="card challenge-grant-card mb-3">
+          <div class="card-body">
+            <h6 class="mb-1">Grant Prize</h6>
+            <div class="h4" style="color: var(--quorum-dark-green);">₹{{ "{:,.0f}".format(challenge.grant_amount_inr / 100) }}</div>
+            <p class="small text-muted mb-0">Awarded to the winning team upon successful outcome verification.</p>
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="card challenge-related-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-2">Quorum projects working on this</h6>
+          {% for project in related_projects[:3] %}
+            <div class="border rounded p-2 mb-2">
+              <a href="{{ url_for('projects_public.detail', id=project.id) }}" class="fw-semibold text-decoration-none">{{ project.title }}</a>
+              <div class="small text-muted">{{ project.domain|replace('_', ' ')|title }}</div>
+            </div>
+          {% else %}
+            <p class="small text-muted mb-2">No linked projects yet.</p>
+          {% endfor %}
+          <a href="{{ url_for('create.start') }}" class="small">Start a project for this challenge →</a>
+        </div>
+      </section>
+
+      <section class="card challenge-share-card">
+        <div class="card-body">
+          <h6 class="mb-2">Share Challenge</h6>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" id="copyChallengeBtn">Copy link</button>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="https://wa.me/?text={{ ('Check this civic challenge: ' ~ request.url)|urlencode }}">WhatsApp</a>
+            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}">LinkedIn</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="challengeToastHost" class="challenge-toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const copyBtn = document.getElementById('copyChallengeBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        copyBtn.textContent = 'Copied';
+      } catch (_error) {
+        copyBtn.textContent = 'Copy failed';
+      }
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy link';
+      }, 1200);
+    });
+  }
+
+  const aiBtn = document.getElementById('aiBriefBtn');
+  const aiBox = document.getElementById('aiBriefBox');
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+  function showToast(message, tone) {
+    const host = document.getElementById('challengeToastHost');
+    if (!host) return;
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${tone || 'info'} shadow`;
+    alert.textContent = message;
+    host.appendChild(alert);
+    setTimeout(() => alert.remove(), 3200);
+  }
+
+  if (aiBtn && aiBox) {
+    aiBtn.addEventListener('click', async () => {
+      aiBtn.disabled = true;
+      aiBtn.textContent = 'Generating...';
+      aiBox.classList.remove('d-none');
+      aiBox.textContent = 'Preparing suggestions...';
+
+      try {
+        const response = await fetch('{{ url_for("challenges.generate_brief") }}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrf
+          },
+          body: JSON.stringify({
+            challenge_title: aiBtn.dataset.title || '',
+            challenge_description: aiBtn.dataset.description || '',
+            domain: aiBtn.dataset.domain || 'community'
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Could not generate suggestions.');
+        }
+        aiBox.textContent = data.brief_suggestions || 'No suggestions returned.';
+        showToast('AI brief generated', 'success');
+      } catch (error) {
+        aiBox.textContent = error.message || 'AI assistant is unavailable right now.';
+        showToast('Unable to generate AI brief', 'warning');
+      } finally {
+        aiBtn.disabled = false;
+        aiBtn.textContent = 'AI Brief Assistant';
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

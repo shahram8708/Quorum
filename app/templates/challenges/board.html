@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Civic Challenges | Quorum{% endblock %}
+
+{% block head_extra %}
+<style>
+  .challenge-board-header {
+    background: linear-gradient(130deg, #0f3f24 0%, #186c3f 58%, #f4c57a 160%);
+    border-radius: 18px;
+    color: #ffffff;
+    padding: 28px;
+    box-shadow: 0 12px 28px rgba(15, 63, 36, 0.2);
+  }
+
+  .challenge-filter-bar {
+    position: sticky;
+    top: 72px;
+    z-index: 20;
+    background: #ffffff;
+    border: 1px solid var(--quorum-border);
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(26, 37, 47, 0.06);
+  }
+
+  .featured-challenge {
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(120deg, #ffffff 0%, #f2faf5 100%);
+    box-shadow: 0 10px 30px rgba(20, 90, 50, 0.08);
+  }
+
+  .challenge-card-cta:hover {
+    background: var(--quorum-orange);
+    border-color: var(--quorum-orange);
+    color: #ffffff;
+  }
+
+  @media (max-width: 992px) {
+    .challenge-filter-bar {
+      position: static;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5 mt-5">
+  <div class="challenge-board-header mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <h1 class="mb-2">Civic Challenges</h1>
+        <p class="mb-0" style="max-width: 620px;">Organizations post real problems. You solve them. Grants available.</p>
+      </div>
+      {% if current_user.is_authenticated and current_user.account_type == 'organization' %}
+        <a href="{{ url_for('org.post_challenge') }}" class="btn btn-light fw-semibold">Post a Challenge</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="get" class="challenge-filter-bar p-3 mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-2">
+        <label class="form-label small mb-1">Domain</label>
+        <select class="form-select" name="domain">
+          <option value="">All</option>
+          {% for domain in ['environment', 'education', 'health', 'community', 'housing', 'civic_infrastructure', 'digital_access', 'food', 'other'] %}
+            <option value="{{ domain }}" {% if filters.domain == domain %}selected{% endif %}>{{ domain|replace('_', ' ')|title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label small mb-1">Status</label>
+        <select class="form-select" name="status">
+          <option value="">All</option>
+          <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Open</option>
+          <option value="closed" {% if filters.status == 'closed' %}selected{% endif %}>Closed</option>
+          <option value="awarded" {% if filters.status == 'awarded' %}selected{% endif %}>Awarded</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label small mb-1">Geography</label>
+        <input type="text" class="form-control" name="geo" value="{{ filters.geo }}" placeholder="City, state, region">
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label small mb-1">Sort</label>
+        <select class="form-select" name="sort">
+          <option value="newest" {% if filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="deadline" {% if filters.sort == 'deadline' %}selected{% endif %}>Deadline Soonest</option>
+          <option value="grant_amount" {% if filters.sort == 'grant_amount' %}selected{% endif %}>Highest Grant</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small mb-1">Search</label>
+        <input type="text" class="form-control" name="q" value="{{ filters.q }}" placeholder="Search title, description, tags">
+      </div>
+      <div class="col-12 col-md-1 d-grid">
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </div>
+    </div>
+  </form>
+
+  {% if featured_challenge %}
+    <section class="featured-challenge card p-3 p-lg-4 mb-4">
+      <div class="row align-items-center g-3">
+        <div class="col-lg-8">
+          <p class="text-uppercase small fw-bold mb-1" style="color: var(--quorum-mid-green);">Featured Open Challenge</p>
+          <h3 class="mb-1">{{ featured_challenge.title }}</h3>
+          <p class="text-muted mb-0">{{ featured_challenge.problem_brief or featured_challenge.description[:220] }}{% if not featured_challenge.problem_brief and featured_challenge.description|length > 220 %}...{% endif %}</p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+          {% if featured_challenge.grant_amount_inr %}
+            <div class="h4 mb-2" style="color: var(--quorum-dark-green);">₹{{ "{:,.0f}".format(featured_challenge.grant_amount_inr / 100) }}</div>
+          {% endif %}
+          <div class="small text-muted mb-3">Deadline: {{ featured_challenge.deadline.strftime('%d %b %Y') if featured_challenge.deadline else 'N/A' }}</div>
+          <a href="{{ url_for('challenges.detail', id=featured_challenge.id) }}" class="btn btn-primary">View Challenge</a>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <div class="row g-3 g-lg-4">
+    {% for challenge in pagination.items %}
+      <div class="col-12 col-md-6 col-xl-4">
+        {% include 'components/challenge_card.html' %}
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="card p-4 text-center">
+          <h5 class="mb-2">No challenges match your filters</h5>
+          <p class="text-muted mb-0">Try broadening your search or resetting filters.</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if pagination.pages > 1 %}
+    <nav aria-label="Challenges pagination" class="mt-4">
+      <ul class="pagination">
+        {% if pagination.has_prev %}
+          <li class="page-item"><a class="page-link" href="{{ pagination_url(pagination.prev_num) }}">Previous</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} / {{ pagination.pages }}</span></li>
+        {% if pagination.has_next %}
+          <li class="page-item"><a class="page-link" href="{{ pagination_url(pagination.next_num) }}">Next</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>
+{% endblock %}

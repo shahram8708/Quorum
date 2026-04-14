@@ -64,8 +64,18 @@
         <div class="sidebar-section-label text-uppercase px-2 py-1 mt-2">Organization</div>
         <a href="{{ url_for('org.dashboard') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.dashboard' else '' }}">Org Dashboard</a>
         <a href="{{ url_for('org.discover') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.discover' else '' }}">Discover Projects</a>
-        <a href="{{ url_for('org.post_challenge') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.post_challenge' else '' }}">Post a Civic Challenge</a>
         <a href="{{ url_for('org.dashboard') }}#impact" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none">Impact Reports</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Challenges</div>
+        <a href="{{ url_for('challenges.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.blueprint == 'challenges' and 'my-submissions' not in request.path else '' }}">
+          Browse Challenges
+          {% if open_challenges_count > 0 %}<span class="nav-badge">{{ open_challenges_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('challenges.my_submissions') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if 'my-submissions' in request.path else '' }}">
+          My Submissions
+          {% if my_pending_submissions_count > 0 %}<span class="nav-badge nav-badge--amber">{{ my_pending_submissions_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('org.post_challenge') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'org.post_challenge' else '' }}">Post a Challenge</a>
 
         <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Platform</div>
         <a href="{{ url_for('projects_public.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/projects') else '' }}">Browse All Projects</a>
@@ -112,6 +122,16 @@
         <a href="{{ url_for('discover.recommended') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint == 'discover.recommended' else '' }}">Recommended For Me</a>
         <a href="{{ url_for('projects_public.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/projects') and not request.path.startswith('/projects/new') else '' }}">Browse All Projects</a>
         <a href="{{ url_for('templates.index') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.path.startswith('/templates') else '' }}">Template Library</a>
+
+        <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">Challenges</div>
+        <a href="{{ url_for('challenges.board') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if request.blueprint == 'challenges' and 'my-submissions' not in request.path else '' }}">
+          Browse Challenges
+          {% if open_challenges_count > 0 %}<span class="nav-badge">{{ open_challenges_count }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('challenges.my_submissions') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if 'my-submissions' in request.path else '' }}">
+          My Submissions
+          {% if my_pending_submissions_count > 0 %}<span class="nav-badge nav-badge--amber">{{ my_pending_submissions_count }}</span>{% endif %}
+        </a>
 
         <div class="sidebar-section-label text-uppercase px-2 py-1 mt-3">My Projects</div>
         <a href="{{ url_for('create.start') }}" class="sidebar-link d-flex align-items-center px-3 py-2 rounded mb-1 text-decoration-none {{ 'active' if endpoint.startswith('create.') else '' }}">Start a New Project</a>

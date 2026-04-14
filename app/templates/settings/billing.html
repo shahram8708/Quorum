@@ -14,19 +14,27 @@
 {% include 'components/settings_tabs.html' %}
 
 <h2>Billing & Subscription</h2>
-<p>Current tier: <strong>{{ current_user.subscription_tier|replace('_',' ')|title }}</strong></p>
+<p class="mb-1">Current tier: <strong>{{ current_plan_label }}</strong></p>
+<p class="text-muted">The card marked as <strong>Current plan</strong> is your active subscription.</p>
 
 <div class="row g-3 mt-2">
   {% for plan_key, plan in plans.items() if plan_key != 'enterprise' %}
+  {% set is_current_plan = plan_key == current_plan_key %}
   <div class="col-md-4">
-    <div class="card h-100">
+    <div class="card h-100 {% if is_current_plan %}border-success shadow-sm{% endif %}">
       <div class="card-body">
+        {% if is_current_plan %}
+          <span class="badge text-bg-success mb-2">Current plan</span>
+        {% endif %}
         <h5>{{ plan.label }}</h5>
         <p class="display-6">{% if plan.amount %}INR {{ (plan.amount / 100)|round(2) }}{% else %}INR 0{% endif %}</p>
-        {% if plan_key != 'free' %}
+        {% if is_current_plan %}
+          <button class="btn btn-success" disabled>You already have this plan</button>
+          <p class="text-success small mb-0 mt-2">You are currently subscribed to {{ plan.label }}.</p>
+        {% elif plan_key != 'free' %}
           <button class="btn btn-primary subscribe-plan-btn" data-plan="{{ plan_key }}">Upgrade to {{ plan.label }}</button>
         {% else %}
-          <button class="btn btn-outline-secondary" disabled>Current default</button>
+          <button class="btn btn-outline-secondary" disabled>Free plan</button>
         {% endif %}
       </div>
     </div>

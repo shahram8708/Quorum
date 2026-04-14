@@ -1,6 +1,9 @@
 #analyticsApp {
   --analytics-card-bg: #ffffff;
   --analytics-card-border: #e5e7eb;
+  --analytics-chart-height: 320px;
+  --analytics-chart-height-mobile: 280px;
+  --analytics-sparkline-height: 34px;
 }
 
 .analytics-range-control .btn.active {
@@ -76,8 +79,17 @@
   color: #6b7280;
 }
 
+.analytics-kpi-sparkline-wrap {
+  position: relative;
+  height: var(--analytics-sparkline-height);
+  min-height: var(--analytics-sparkline-height);
+  max-height: var(--analytics-sparkline-height);
+  overflow: hidden;
+}
+
 .analytics-kpi-sparkline {
-  height: 34px;
+  width: 100%;
+  height: 100%;
 }
 
 .analytics-chart-grid {
@@ -120,19 +132,55 @@
 
 .analytics-chart-wrap {
   position: relative;
-  height: 320px;
-  min-height: 320px;
+  height: var(--analytics-chart-height);
+  min-height: var(--analytics-chart-height);
+  max-height: var(--analytics-chart-height);
+  overflow: hidden;
 }
 
-.analytics-chart-wrap canvas {
-  width: 100% !important;
-  height: 100% !important;
+.analytics-chart-wrap canvas,
+.analytics-kpi-sparkline-wrap canvas {
+  display: block;
 }
 
 .analytics-events-feed {
   max-height: 380px;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.analytics-milestone-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.analytics-milestone-progress {
+  --bs-progress-bg: #dfe7e2;
+  --bs-progress-bar-bg: var(--quorum-mid-green, #1e8449);
+  --bs-progress-bar-bg-image: linear-gradient(90deg, var(--quorum-light-green, #27ae60) 0%, var(--quorum-mid-green, #1e8449) 100%);
+  height: 8px;
+  min-width: 84px;
+  flex: 1;
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: var(--bs-progress-bg);
+}
+
+.analytics-milestone-progress .analytics-milestone-progress-bar {
+  background-color: var(--bs-progress-bar-bg) !important;
+  background-image: var(--bs-progress-bar-bg-image) !important;
+  transition: width 0.24s ease;
+}
+
+.analytics-milestone-progress-label {
+  min-width: 36px;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+  color: #166534;
 }
 
 .analytics-event-item {
@@ -194,8 +242,9 @@
   }
 
   .analytics-chart-wrap {
-    height: 280px;
-    min-height: 280px;
+    height: var(--analytics-chart-height-mobile);
+    min-height: var(--analytics-chart-height-mobile);
+    max-height: var(--analytics-chart-height-mobile);
   }
 }
 

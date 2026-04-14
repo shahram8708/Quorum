@@ -39,7 +39,7 @@ AI_FEATURE_NAME_MAP = {
 }
 
 try:
-    from google.api_core.exceptions import (
+    from google.api_core.exceptions import (  # type: ignore[reportMissingImports]
         DeadlineExceeded,
         InvalidArgument,
         ResourceExhausted,
@@ -1702,6 +1702,38 @@ Now generate the actual JSON response for the input provided above. Return ONLY 
             return self._handle_method_error(method_name, error, fallback, error.raw_response)
         except Exception as error:
             return self._handle_method_error(method_name, error, fallback, raw_response)
+
+    def generate_submission_brief(self, challenge_title: str, challenge_description: str, domain: str) -> str:
+        """
+        Given a civic challenge, generate structured suggestions for a submission approach.
+        Returns a plain-text structured brief the user can adapt.
+        """
+        prompt = f"""
+You are helping a civic volunteer structure their submission approach for a civic challenge.
+
+CHALLENGE TITLE: {challenge_title}
+DOMAIN: {domain}
+CHALLENGE DESCRIPTION: {challenge_description}
+
+Generate a structured submission brief with these sections:
+1. PROPOSED APPROACH (2-3 sentences: what the team will specifically do)
+2. EXPECTED OUTCOMES (2-3 measurable outcomes, e.g. "Survey 200 households", "Plant 500 trees")
+3. TEAM SKILLS NEEDED (3-5 skill types relevant to this domain)
+4. TIMELINE (suggested 4-6 week timeline with milestone names only)
+5. WHY THIS APPROACH WORKS (1-2 sentences on why this is realistic and impactful)
+
+Be specific, grounded, and realistic for a small volunteer team of 5-12 people with 90 days.
+Format as plain text with section headers. Avoid bullet symbols except for TEAM SKILLS NEEDED.
+Do not include any preamble or closing remarks.
+"""
+        try:
+            response_text = self._generate_content(prompt, "generate_submission_brief")
+            return str(response_text or "").strip()
+        except Exception:
+            return (
+                "AI assistant is temporarily unavailable. Please write your approach in your own words "
+                "- focus on: what you'll do, who'll do it, and what measurable outcome you'll achieve."
+            )
 
 
 def refresh_all_civic_pulse():

@@ -82,7 +82,15 @@ def create_app(config_name: str | None = None) -> Flask:
 
 
 def register_context_processors(app: Flask) -> None:
-    from app.models import Notification, OrganizationAccount, Project, ProjectOutcome, ProjectRole
+    from app.models import (
+        ChallengeSubmission,
+        CivicChallenge,
+        Notification,
+        OrganizationAccount,
+        Project,
+        ProjectOutcome,
+        ProjectRole,
+    )
     from app.services.file_handler import generate_presigned_url
 
     onboarding_allowed_prefixes = ("auth.", "main.", "onboarding.")
@@ -122,6 +130,8 @@ def register_context_processors(app: Flask) -> None:
         flagged_projects_count = 0
         pending_outcomes_count = 0
         org_account = None
+        open_challenges_count = 0
+        my_pending_submissions_count = 0
 
         if current_user.is_authenticated:
             try:
@@ -150,6 +160,12 @@ def register_context_processors(app: Flask) -> None:
                 if current_user.is_admin:
                     flagged_projects_count = Project.query.filter_by(is_flagged=True).count()
                     pending_outcomes_count = ProjectOutcome.query.filter_by(is_published=False).count()
+
+                open_challenges_count = CivicChallenge.query.filter_by(status="open").count()
+                my_pending_submissions_count = ChallengeSubmission.query.filter(
+                    ChallengeSubmission.submitter_user_id == current_user.id,
+                    ChallengeSubmission.status.in_(["submitted", "under_review", "shortlisted"]),
+                ).count()
             except Exception:
                 unread_count = 0
                 recent_notifications = []
@@ -158,6 +174,8 @@ def register_context_processors(app: Flask) -> None:
                 flagged_projects_count = 0
                 pending_outcomes_count = 0
                 org_account = None
+                open_challenges_count = 0
+                my_pending_submissions_count = 0
 
         def resolve_file_url(storage_path: str | None) -> str:
             if not storage_path:
@@ -188,6 +206,8 @@ def register_context_processors(app: Flask) -> None:
             "flagged_projects_count": flagged_projects_count,
             "pending_outcomes_count": pending_outcomes_count,
             "org_account": org_account,
+            "open_challenges_count": open_challenges_count,
+            "my_pending_submissions_count": my_pending_submissions_count,
             "today": date.today(),
             "env": app.config.get("ENV_RENDERED_VALUES", {}),
             "resolve_file_url": resolve_file_url,
@@ -198,6 +218,7 @@ def register_context_processors(app: Flask) -> None:
 def register_blueprints(app: Flask) -> None:
     from app.routes.admin import admin_bp
     from app.routes.auth import auth_bp
+    from app.routes.challenges import challenges_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.discover import discover_bp
     from app.routes.feed import feed_bp
@@ -215,6 +236,7 @@ def register_blueprints(app: Flask) -> None:
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(challenges_bp)
     app.register_blueprint(onboarding_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(projects_public_bp)

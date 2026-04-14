@@ -95,6 +95,59 @@ SUBSCRIPTION_PLAN_LABELS = {
     "org_team": "Org Team",
 }
 
+AI_FEATURE_KEY_ALIASES = {
+    "enhance_project_description": "description_enhancer",
+    "validate_project_scope": "scope_validator",
+    "suggest_project_roles": "role_suggester",
+    "personalized_recommendations": "recommendations",
+    "ai_template_search": "template_search",
+    "fetch_civic_pulse": "civic_pulse",
+    "generate_outcome_draft": "outcome_assistant",
+    "discover_civic_challenges": "challenge_discovery",
+}
+
+SUBSCRIPTION_PLAN_ALIASES = {
+    "creator": "creator_pro",
+    "creatorpro": "creator_pro",
+    "creator_plus": "creator_pro",
+    "organization_starter": "org_starter",
+    "orgstarter": "org_starter",
+    "org_start": "org_starter",
+    "organization_team": "org_team",
+    "orgteam": "org_team",
+}
+
+
+def _normalize_lookup_key(value: str | None) -> str:
+    return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _normalize_ai_feature_key(raw_name: str | None):
+    key = _normalize_lookup_key(raw_name)
+    if not key:
+        return None
+    if key in AI_FEATURE_LABELS:
+        return key
+    return AI_FEATURE_KEY_ALIASES.get(key)
+
+
+def _normalize_plan_key(raw_name: str | None):
+    key = _normalize_lookup_key(raw_name)
+    if not key:
+        return None
+    if key in SUBSCRIPTION_PLAN_LABELS:
+        return key
+    alias = SUBSCRIPTION_PLAN_ALIASES.get(key)
+    if alias:
+        return alias
+    if key.startswith("creator"):
+        return "creator_pro"
+    if ("org" in key or "organization" in key) and "starter" in key:
+        return "org_starter"
+    if ("org" in key or "organization" in key) and "team" in key:
+        return "org_team"
+    return None
+
 
 def _preview_serializer() -> URLSafeTimedSerializer:
     from flask import current_app
@@ -1685,8 +1738,8 @@ def analytics_data():
         ).all()
         revenue_month_plan = defaultdict(int)
         for payment in payments_in_period:
-            plan = (payment.plan_name or "").strip().lower()
-            if plan not in SUBSCRIPTION_PLAN_LABELS:
+            plan = _normalize_plan_key(payment.plan_name)
+            if not plan:
                 continue
             month_key = _bucket_key(payment.paid_at, "month")
             revenue_month_plan[(plan, month_key)] += int(payment.amount_inr or 0)
@@ -1708,15 +1761,32 @@ def analytics_data():
             + org_team_subscribers * org_team_price
         )
 
+        # If selected period has no payment events, show current MRR snapshot so chart remains informative.
+        if not any(revenue_creator_series) and not any(revenue_org_starter_series) and not any(revenue_org_team_series):
+            month_labels = ["Current MRR Snapshot"]
+            revenue_creator_series = [creator_subscribers * creator_price]
+            revenue_org_starter_series = [org_starter_subscribers * org_starter_price]
+            revenue_org_team_series = [org_team_subscribers * org_team_price]
+
         ai_usage_counts = defaultdict(int)
         ai_rows = _apply_period_filter(AIUsageLog.query, AIUsageLog.called_at, start_dt, end_dt).with_entities(AIUsageLog.feature_name).all()
         for row in ai_rows:
-            feature_name = (row.feature_name or "").strip().lower()
-            if feature_name in AI_FEATURE_LABELS:
+            feature_name = _normalize_ai_feature_key(row.feature_name)
+            if feature_name:
                 ai_usage_counts[feature_name] += 1
 
         ai_feature_order = list(AI_FEATURE_LABELS.keys())
         ai_feature_series = [ai_usage_counts.get(key, 0) for key in ai_feature_order]
+
+        # Backfill from all-time logs when period data is empty to avoid blank distribution charts.
+        if sum(ai_feature_series) == 0:
+            ai_usage_counts = defaultdict(int)
+            all_time_ai_rows = AIUsageLog.query.with_entities(AIUsageLog.feature_name).all()
+            for row in all_time_ai_rows:
+                feature_name = _normalize_ai_feature_key(row.feature_name)
+                if feature_name:
+                    ai_usage_counts[feature_name] += 1
+            ai_feature_series = [ai_usage_counts.get(key, 0) for key in ai_feature_order]
 
         blog_query = BlogPost.query.filter(BlogPost.deleted_at.is_(None))
         if start_dt:
@@ -1792,10 +1862,14 @@ def analytics_data():
             tasks_done = sum(1 for task in project.tasks if task.status == "done")
             team_size = 1 + sum(1 for role in project.roles if role.is_filled and role.filled_by_user_id)
             if project.milestones:
-                milestone_progress = round(
-                    sum(float(milestone.completion_pct or 0.0) for milestone in project.milestones) / len(project.milestones),
-                    2,
-                )
+                milestone_progress_values = []
+                for milestone in project.milestones:
+                    raw_progress = float(milestone.completion_pct or 0.0)
+                    # Support both legacy [0,1] fractions and [0,100] percentage values.
+                    if 0.0 < raw_progress <= 1.0:
+                        raw_progress *= 100.0
+                    milestone_progress_values.append(max(0.0, min(100.0, raw_progress)))
+                milestone_progress = round(sum(milestone_progress_values) / len(milestone_progress_values), 2)
             else:
                 milestone_progress = 0.0
             activity_score = tasks_done * 3 + tasks_total
@@ -1883,10 +1957,11 @@ def analytics_data():
 
         for payment in RazorpayPayment.query.filter(RazorpayPayment.was_verified.is_(True)).order_by(RazorpayPayment.paid_at.desc()).limit(30).all():
             if payment.paid_at:
+                plan_key = _normalize_plan_key(payment.plan_name)
                 events.append(
                     {
                         "icon": "bi-currency-rupee",
-                        "description": f"New subscription payment: {SUBSCRIPTION_PLAN_LABELS.get(payment.plan_name, payment.plan_name)}",
+                        "description": f"New subscription payment: {SUBSCRIPTION_PLAN_LABELS.get(plan_key, payment.plan_name)}",
                         "user": payment.user.full_name if payment.user else "",
                         "timestamp": payment.paid_at,
                         "link": url_for("settings.billing"),
@@ -1895,10 +1970,12 @@ def analytics_data():
 
         for log_row in AIUsageLog.query.order_by(AIUsageLog.called_at.desc()).limit(30).all():
             if log_row.called_at:
+                feature_key = _normalize_ai_feature_key(log_row.feature_name)
+                feature_label = AI_FEATURE_LABELS.get(feature_key, (log_row.feature_name or "AI feature").replace("_", " ").title())
                 events.append(
                     {
                         "icon": "bi-cpu",
-                        "description": f"AI feature used: {AI_FEATURE_LABELS.get(log_row.feature_name, log_row.feature_name)}",
+                        "description": f"AI feature used: {feature_label}",
                         "user": log_row.user.full_name if log_row.user else "",
                         "timestamp": log_row.called_at,
                         "link": url_for("admin.analytics"),

@@ -153,7 +153,7 @@
     const readingTimeBadge = document.getElementById('readingTimeBadge');
     const autoSaveStatus = document.getElementById('autoSaveStatus');
     const postIdInput = document.getElementById('postIdInput');
-  const statusSelect = document.getElementById('statusSelect');
+    const statusSelect = document.getElementById('statusSelect');
 
     const seoTitleInput = document.getElementById('metaTitleInput');
     const seoDescriptionInput = document.getElementById('metaDescriptionInput');

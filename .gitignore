@@ -24,6 +24,7 @@ ENV/
 instance/
 local_storage/
 .webassets-cache
+migrations/
 
 # Test, lint, and type-check caches
 .pytest_cache/

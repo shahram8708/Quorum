@@ -54,10 +54,12 @@
   ];
 
   function configureChartDefaults() {
-    Chart.defaults.animation = {
-      duration: 850,
-      easing: "easeOutQuart",
-    };
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.resizeDelay = 140;
+    // Preserve Chart.js internal animation config shape; mutate props instead of replacing the whole object.
+    Chart.defaults.animation.duration = 850;
+    Chart.defaults.animation.easing = "easeOutQuart";
     Chart.defaults.color = "#334155";
     Chart.defaults.font.family = "Inter, system-ui, sans-serif";
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
@@ -112,6 +114,20 @@
   function formatNumber(value) {
     const num = Number(value || 0);
     return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(num);
+  }
+
+  function normalizePercent(value) {
+    if (value === null || value === undefined) {
+      return 0;
+    }
+
+    const parsed = Number.parseFloat(String(value).replace("%", "").trim());
+    if (!Number.isFinite(parsed)) {
+      return 0;
+    }
+
+    const normalized = parsed > 0 && parsed <= 1 ? parsed * 100 : parsed;
+    return Math.max(0, Math.min(100, normalized));
   }
 
   function formatCurrency(value) {
@@ -266,7 +282,9 @@
             </div>
             <div class="analytics-kpi-value">${metricValue}</div>
             <div class="analytics-kpi-change ${toneClass}">${changeText}</div>
-            <canvas class="analytics-kpi-sparkline" id="sparkline-${index}" height="34"></canvas>
+            <div class="analytics-kpi-sparkline-wrap">
+              <canvas class="analytics-kpi-sparkline" id="sparkline-${index}"></canvas>
+            </div>
           </article>
         `;
       })
@@ -295,6 +313,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          resizeDelay: 140,
           plugins: {
             legend: { display: false },
             tooltip: { enabled: false },
@@ -627,59 +646,121 @@
   }
 
   function renderRevenue(chartData) {
-    createChart("chartRevenue", {
-      type: "bar",
-      data: {
-        labels: chartData.labels || [],
-        datasets: [
-          {
-            label: "Creator Pro",
-            data: chartData.creator_pro || [],
-            backgroundColor: palette.midGreen,
-            stack: "revenue",
-          },
-          {
-            label: "Org Starter",
-            data: chartData.org_starter || [],
-            backgroundColor: palette.orange,
-            stack: "revenue",
-          },
-          {
-            label: "Org Team",
-            data: chartData.org_team || [],
-            backgroundColor: palette.indigo,
-            stack: "revenue",
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            stacked: true,
-          },
-          y: {
-            stacked: true,
-            ticks: {
-              callback(value) {
-                return formatCurrency(value);
-              },
-            },
-          },
-        },
-      },
-    });
-
     const summary = chartData.summary || {};
     const revenueSummaryBody = document.getElementById("revenueSummaryBody");
-    if (!revenueSummaryBody) {
-      return;
-    }
 
     const creatorCount = Number(summary.creator_pro_subscribers || 0);
     const starterCount = Number(summary.org_starter_subscribers || 0);
     const teamCount = Number(summary.org_team_subscribers || 0);
+
+    const sourceLabels = Array.isArray(chartData.labels) ? chartData.labels : [];
+    const sourceCreator = Array.isArray(chartData.creator_pro) ? chartData.creator_pro : [];
+    const sourceStarter = Array.isArray(chartData.org_starter) ? chartData.org_starter : [];
+    const sourceTeam = Array.isArray(chartData.org_team) ? chartData.org_team : [];
+
+    const inferredLength = Math.max(sourceLabels.length, sourceCreator.length, sourceStarter.length, sourceTeam.length);
+    const labels =
+      inferredLength > 0
+        ? Array.from({ length: inferredLength }, (_value, idx) => String(sourceLabels[idx] || `Period ${idx + 1}`))
+        : [];
+
+    const normalizeSeries = (series) =>
+      labels.map((_label, idx) => {
+        const numeric = Number(series[idx] || 0);
+        return Number.isFinite(numeric) ? numeric : 0;
+      });
+
+    const creatorSeries = normalizeSeries(sourceCreator);
+    const starterSeries = normalizeSeries(sourceStarter);
+    const teamSeries = normalizeSeries(sourceTeam);
+
+    const hasRevenueInRange =
+      creatorSeries.some((value) => value > 0) ||
+      starterSeries.some((value) => value > 0) ||
+      teamSeries.some((value) => value > 0);
+
+    if (hasRevenueInRange) {
+      createChart("chartRevenue", {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Creator Pro",
+              data: creatorSeries,
+              backgroundColor: palette.midGreen,
+              stack: "revenue",
+            },
+            {
+              label: "Org Starter",
+              data: starterSeries,
+              backgroundColor: palette.orange,
+              stack: "revenue",
+            },
+            {
+              label: "Org Team",
+              data: teamSeries,
+              backgroundColor: palette.indigo,
+              stack: "revenue",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              stacked: true,
+            },
+            y: {
+              stacked: true,
+              ticks: {
+                callback(value) {
+                  return formatCurrency(value);
+                },
+              },
+            },
+          },
+        },
+      });
+    } else {
+      createChart("chartRevenue", {
+        type: "bar",
+        data: {
+          labels: ["Creator Pro", "Org Starter", "Org Team"],
+          datasets: [
+            {
+              label: "Current MRR",
+              data: [
+                creatorCount * PLAN_PRICES.creator_pro,
+                starterCount * PLAN_PRICES.org_starter,
+                teamCount * PLAN_PRICES.org_team,
+              ],
+              backgroundColor: [palette.midGreen, palette.orange, palette.indigo],
+              borderRadius: 8,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback(value) {
+                  return formatCurrency(value);
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (!revenueSummaryBody) {
+      return;
+    }
 
     const rows = [
       {
@@ -720,14 +801,35 @@
   }
 
   function renderAiUsage(chartData) {
+    const sourceLabels = Array.isArray(chartData.labels) ? chartData.labels : [];
+    const sourceValues = Array.isArray(chartData.values) ? chartData.values : [];
+    const inferredLength = Math.max(sourceLabels.length, sourceValues.length);
+
+    const items = Array.from({ length: inferredLength }, (_value, idx) => {
+      const numeric = Number(sourceValues[idx] || 0);
+      return {
+        label: String(sourceLabels[idx] || `Feature ${idx + 1}`),
+        value: Number.isFinite(numeric) ? numeric : 0,
+      };
+    });
+
+    const nonZeroItems = items.filter((item) => item.value > 0);
+    const hasUsage = nonZeroItems.length > 0;
+
+    const labels = hasUsage ? nonZeroItems.map((item) => item.label) : ["No Usage Data"];
+    const values = hasUsage ? nonZeroItems.map((item) => item.value) : [1];
+    const colors = hasUsage
+      ? labels.map((_label, idx) => chartColors[idx % chartColors.length])
+      : ["#cbd5e1"];
+
     createChart("chartAiUsage", {
       type: "pie",
       data: {
-        labels: chartData.labels || [],
+        labels,
         datasets: [
           {
-            data: chartData.values || [],
-            backgroundColor: chartColors,
+            data: values,
+            backgroundColor: colors,
             borderWidth: 0,
           },
         ],
@@ -735,6 +837,18 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label(context) {
+                if (!hasUsage) {
+                  return "No AI usage events found for this timeframe.";
+                }
+                return `${formatNumber(context.raw)} calls`;
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -896,7 +1010,8 @@
 
     tbody.innerHTML = (rows || [])
       .map((row) => {
-        const progress = Math.max(0, Math.min(100, Number(row.milestone_progress || 0)));
+        const progress = normalizePercent(row.milestone_progress);
+        const roundedProgress = Math.round(progress);
         return `
           <tr>
             <td><a href="${escapeHtml(row.project_link || `/projects/${row.project_id}`)}" target="_blank" rel="noopener">${escapeHtml(row.title)}</a></td>
@@ -906,8 +1021,11 @@
             <td class="text-end">${formatNumber(row.team_size)}</td>
             <td class="text-end">${formatNumber(row.tasks_completed)} / ${formatNumber(row.tasks_total)}</td>
             <td>
-              <div class="progress" style="height: 8px; min-width: 84px;">
-                <div class="progress-bar" style="width: ${progress}%; background-color: ${palette.midGreen};"></div>
+              <div class="analytics-milestone-progress-wrap">
+                <div class="progress analytics-milestone-progress" role="progressbar" aria-label="Milestone progress" aria-valuenow="${roundedProgress}" aria-valuemin="0" aria-valuemax="100" title="${roundedProgress}% complete">
+                  <div class="progress-bar analytics-milestone-progress-bar" style="width: ${progress}%;"></div>
+                </div>
+                <span class="analytics-milestone-progress-label">${roundedProgress}%</span>
               </div>
             </td>
             <td>${formatDate(row.started_date)}</td>
