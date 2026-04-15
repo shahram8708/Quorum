@@ -92,7 +92,7 @@ const QuorumAI = (() => {
         const targetEl = document.querySelector(targetSelector);
         btn.disabled = true;
         const originalText = btn.textContent;
-        btn.textContent = 'Asking Gemini...';
+        btn.textContent = 'Asking AI...';
 
         debounce(endpoint + action, () => {
           const payload = buildPayload(action, targetEl);
