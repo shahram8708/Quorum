@@ -19,6 +19,9 @@
     </div>
     <div class="d-flex flex-column align-items-end gap-2">
       <span class="badge text-bg-secondary">{{ project.status|replace('_',' ')|title }}</span>
+      {% if project.is_flagged %}
+        <span class="badge text-bg-warning">Under moderation review</span>
+      {% endif %}
       {% if current_user.is_authenticated and can_rate_peers %}
         <a class="btn btn-sm btn-success" href="{{ url_for('projects_public.rate_peers', id=project.id) }}">Rate Teammates</a>
       {% endif %}
@@ -91,6 +94,29 @@
           {% for role in project.roles if role.is_filled %}
             <div class="small">{{ role.title }}: {% if role.filled_by_user %}<a href="{{ url_for('profile.public_profile', username=role.filled_by_user.username) }}">{{ role.filled_by_user.full_name }}</a>{% else %}N/A{% endif %}</div>
           {% endfor %}
+        </div>
+      </div>
+
+      <div class="card mb-3 border-warning-subtle">
+        <div class="card-body">
+          <h6 class="mb-2">Report Project</h6>
+          {% if current_user.is_authenticated and current_user.id != project.creator_user_id %}
+            {% if has_user_flagged_project %}
+              <p class="small text-muted mb-0">You already reported this project. Moderators will review it shortly.</p>
+            {% else %}
+              <p class="small text-muted">Report spam, abusive content, scams, or policy violations.</p>
+              <form method="post" action="{{ url_for('projects_public.flag_project', id=project.id) }}" class="d-grid gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea class="form-control form-control-sm" name="reason" rows="3" maxlength="500" minlength="20" required placeholder="Please explain what is wrong with this project (minimum 20 characters)"></textarea>
+                <button class="btn btn-sm btn-outline-warning" type="submit">Submit Report</button>
+              </form>
+            {% endif %}
+          {% elif not current_user.is_authenticated %}
+            <p class="small text-muted mb-2">Only signed-in users can report projects.</p>
+            <a class="btn btn-sm btn-outline-warning" href="{{ url_for('auth.login', next=url_for('projects_public.detail', id=project.id)) }}">Log in to Report</a>
+          {% else %}
+            <p class="small text-muted mb-0">You are the project creator, so reporting is disabled for this project.</p>
+          {% endif %}
         </div>
       </div>
 

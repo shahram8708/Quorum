@@ -10,15 +10,34 @@
 
 <form method="get" class="card p-3 mb-3">
   <div class="row g-2">
-    <div class="col-md-10"><input class="form-control" name="reason" placeholder="Filter by flag reason" value="{{ reason_filter }}"></div>
+    <div class="col-md-6"><input class="form-control" name="reason" placeholder="Filter by flag reason" value="{{ reason_filter }}"></div>
+    <div class="col-md-4">
+      <select class="form-select" name="status">
+        <option value="" {% if not status_filter %}selected{% endif %}>Flagged only (default)</option>
+        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="assembling" {% if status_filter == 'assembling' %}selected{% endif %}>Assembling</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="launch_ready" {% if status_filter == 'launch_ready' %}selected{% endif %}>Launch Ready</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+      </select>
+    </div>
     <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Filter</button></div>
   </div>
 </form>
 
 {% for project in pagination.items %}
   <div class="card mb-3"><div class="card-body">
-    <h5>{{ project.title }}</h5>
-    <p class="small text-muted">Reason: {{ project.flag_reason or 'Not specified' }}</p>
+    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+      <h5 class="mb-0">{{ project.title }}</h5>
+      <div class="d-flex flex-wrap gap-1 justify-content-end">
+        <span class="badge text-bg-light">{{ project.status|replace('_', ' ')|title }}</span>
+        {% if project.is_flagged %}
+          <span class="badge text-bg-warning">Flagged</span>
+        {% endif %}
+      </div>
+    </div>
+    <p class="small text-muted mb-2" style="white-space: pre-line;">Reason(s): {{ project.flag_reason or 'Not specified' }}</p>
     <div class="d-flex flex-wrap gap-2">
       <a class="btn btn-sm btn-outline-primary" href="{{ url_for('projects_public.detail', id=project.id) }}" target="_blank" rel="noopener">View Public Page</a>
       <form method="post" action="{{ url_for('admin.unflag_project', id=project.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">Unflag</button></form>

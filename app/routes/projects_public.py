@@ -69,12 +69,15 @@ def detail(id):
     open_roles = [role for role in project.roles if not role.is_filled]
     feed_posts = project.feed_posts[:8]
     user_applications_by_role_id = {}
+    has_user_flagged_project = False
     is_creator = False
     is_member = False
     can_rate_peers = False
     can_view_peer_ratings = False
 
     if current_user.is_authenticated:
+        reporter_marker = f"user_id={current_user.id}"
+        has_user_flagged_project = reporter_marker in (project.flag_reason or "")
         is_creator = current_user.id == project.creator_user_id
         is_member = (not is_creator) and is_project_team_member(project.id, current_user.id)
         if open_roles:
@@ -108,11 +111,47 @@ def detail(id):
         open_roles=open_roles,
         feed_posts=feed_posts,
         user_applications_by_role_id=user_applications_by_role_id,
+        has_user_flagged_project=has_user_flagged_project,
         is_creator=is_creator,
         is_member=is_member,
         can_rate_peers=can_rate_peers,
         can_view_peer_ratings=can_view_peer_ratings,
     )
+
+
+@projects_public_bp.post("/<int:id>/flag")
+@login_required
+@limiter.limit("5 per day", key_func=lambda: str(current_user.id), methods=["POST"])
+def flag_project(id):
+    project = Project.query.get_or_404(id)
+
+    if current_user.id == project.creator_user_id:
+        flash("You cannot flag your own project.", "warning")
+        return redirect(url_for("projects_public.detail", id=id))
+
+    reason = " ".join(strip_html(request.form.get("reason", ""), 500).split())
+    if len(reason) < 20:
+        flash("Please provide at least 20 characters so moderators can review this report.", "warning")
+        return redirect(url_for("projects_public.detail", id=id))
+
+    reporter_marker = f"user_id={current_user.id}"
+    report_lines = [line.strip() for line in (project.flag_reason or "").splitlines() if line.strip()]
+    if any(reporter_marker in line for line in report_lines):
+        flash("You already reported this project. Our moderation team will review it shortly.", "info")
+        return redirect(url_for("projects_public.detail", id=id))
+
+    reporter_name = " ".join((current_user.full_name or current_user.username or "").split()) or f"User {current_user.id}"
+    reported_at = utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    report_entry = f"[{reported_at}] {reporter_name} ({reporter_marker}): {reason}"
+
+    report_lines.append(report_entry)
+    # Keep the latest entries compact for admin moderation screens.
+    project.flag_reason = "\n".join(report_lines[-10:])
+    project.is_flagged = True
+    db.session.commit()
+
+    flash("Thanks for reporting. Our moderation team will review this project.", "success")
+    return redirect(url_for("projects_public.detail", id=id))
 
 
 @projects_public_bp.route("/<int:id>/apply/<int:role_id>", methods=["GET", "POST"])
